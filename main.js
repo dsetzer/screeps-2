@@ -1,6 +1,7 @@
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
+var roleJanitor = require('role.janitor');
 var sp1 = Game.spawns.Spawn1;
 var _ = require('lodash');
 
@@ -9,6 +10,7 @@ var roles = [
   'harvester',
   'upgrader',
   'builder',
+  'janitor',
 ];
 
 var bodies = {
@@ -16,9 +18,10 @@ var bodies = {
   fastWorker: [WORK, CARRY, MOVE, MOVE],
 };
 
-var minHarvesters = 6;
-var minUpgraders = 10;
-var minBuilders = 4;
+var minHarvesters = 8;
+var minUpgraders = 13;
+var minBuilders = 10;
+var minJanitors = 4;
 
 // clear creeps stored in memory that have sinced died
 function RIPTheBoys() {
@@ -42,14 +45,18 @@ module.exports.loop = function () {
   var currHarvesters = roleCount('harvester');
   var currUpgraders = roleCount('upgrader');
   var currBuilders = roleCount('builder');
+  var currJanitors = roleCount('janitor');
   // console.log(`${currHarvesters} hrvs, ${currUpgraders} upgs, ${currBuilders} blds`);
   if ((sp1.energy >= 300)) {
-    if (currHarvesters < minHarvesters) {
+    if (currHarvesters <= minHarvesters) {
       sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
       console.log('spawning harvester');
-    } else if (currUpgraders < minUpgraders) {
+    } else if (currUpgraders <= minUpgraders) {
       sp1.createCreep(bodies.fastWorker, null, {role: 'upgrader'});
       console.log('spawning upgrader');
+    } else if (currJanitors <= minUpgraders) {
+      sp1.createCreep(bodies.worker, null, {role: 'janitor'});
+      console.log('spawning janitor');
     } else {
       sp1.createCreep(bodies.worker, null, {role: 'builder'});
       console.log('spawning builder');
@@ -82,6 +89,9 @@ module.exports.loop = function () {
     }
     if(creep.memory.role == 'builder') {
       roleBuilder.run(creep);
+    }
+    if(creep.memory.role == 'janitor') {
+      roleJanitor.run(creep);
     }
   }
 }
