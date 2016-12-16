@@ -18,9 +18,9 @@ var roleUpgrader = {
             }
         }
         else {
-            var sources = creep.room.find(FIND_SOURCES);
-            if(creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(sources[0]);
+            var nearestSource = creep.pos.findClosestByRange(FIND_SOURCES);
+            if (creep.harvest(nearestSource) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(nearestSource);
             }
         }
     }
