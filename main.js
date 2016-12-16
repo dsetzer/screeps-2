@@ -17,7 +17,7 @@ var bodies = {
 };
 
 var minHarvesters = 6;
-var minUpgraders = 8;
+var minUpgraders = 10;
 var minBuilders = 4;
 
 // clear creeps stored in memory that have sinced died
@@ -29,16 +29,20 @@ function RIPTheBoys() {
   }
 }
 
+function roleCount(role) {
+  return _.sum(Game.creeps, (c) => c.memory.role === role);
+};
+
 module.exports.loop = function () {
   // clear dead creeps from memory
   RIPTheBoys();
   // find current creeps & count
   // var currentCreeps = Game.spawns.Spawn1.room.find(FIND_MY_CREEPS);
   // var creepCount = currentCreeps.length;
-  var currHarvesters = _.sum(Game.creeps, (c) => c.memory.role === 'harvester');
-  var currUpgraders = _.sum(Game.creeps, (c) => c.memory.role === 'upgrader');
-  var currBuilders = _.sum(Game.creeps, (c) => c.memory.role === 'builder');
-  console.log(`${currHarvesters} hrvs, ${currUpgraders} upgs, ${currBuilders} blds`);
+  var currHarvesters = roleCount('harvester');
+  var currUpgraders = roleCount('upgrader');
+  var currBuilders = roleCount('builder');
+  // console.log(`${currHarvesters} hrvs, ${currUpgraders} upgs, ${currBuilders} blds`);
   if ((sp1.energy >= 300)) {
     if (currHarvesters < minHarvesters) {
       sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
