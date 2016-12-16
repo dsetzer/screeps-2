@@ -8,45 +8,46 @@ var roles = [
   'upgrader',
   'builder',
 ];
-var nextRole = 0;
+
+var bodies = {
+  generic: [WORK, CARRY, MOVE],
+};
 
 module.exports.loop = function () {
   
   var zeroOneTwo = Math.round(Math.random() * 2);
   var randomRole = roles[zeroOneTwo];
 
-    if (sp1.energy >= 200) {
-      sp1.createCreep([WORK, CARRY, MOVE], null, {role: randomRole});
-      console.log('spawning', randomRole);
-    }
-    
-    console.log(randomRole);
-    
-    var tower = Game.getObjectById('TOWER_ID');
-    if(tower) {
-        var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure) => structure.hits < structure.hitsMax
-        });
-        if(closestDamagedStructure) {
-            tower.repair(closestDamagedStructure);
-        }
-
-        var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if(closestHostile) {
-            tower.attack(closestHostile);
-        }
+  if ((sp1.canCreateCreep(bodies.generic, null) === OK) && (sp1.energy >= 200)) {
+    sp1.createCreep(bodies.generic, null, {role: randomRole});
+    console.log('spawning', randomRole);
+  }
+  
+  var tower = Game.getObjectById('TOWER_ID');
+  if(tower) {
+    var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
+      filter: (structure) => structure.hits < structure.hitsMax
+    });
+    if(closestDamagedStructure) {
+      tower.repair(closestDamagedStructure);
     }
 
-    for(var name in Game.creeps) {
-        var creep = Game.creeps[name];
-        if(creep.memory.role == 'harvester') {
-            roleHarvester.run(creep);
-        }
-        if(creep.memory.role == 'upgrader') {
-            roleUpgrader.run(creep);
-        }
-        if(creep.memory.role == 'builder') {
-            roleBuilder.run(creep);
-        }
+    var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+    if(closestHostile) {
+      tower.attack(closestHostile);
     }
+  }
+
+  for(var name in Game.creeps) {
+    var creep = Game.creeps[name];
+    if(creep.memory.role == 'harvester') {
+      roleHarvester.run(creep);
+    }
+    if(creep.memory.role == 'upgrader') {
+      roleUpgrader.run(creep);
+    }
+    if(creep.memory.role == 'builder') {
+      roleBuilder.run(creep);
+    }
+  }
 }
