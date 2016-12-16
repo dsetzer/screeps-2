@@ -2,7 +2,8 @@ var roleUpgrader = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
-
+      var sources = creep.room.find(FIND_SOURCES);
+      var upgraderSource = sources[0];
         if(creep.memory.upgrading && creep.carry.energy == 0) {
             creep.memory.upgrading = false;
             creep.say('harvesting');
@@ -18,9 +19,8 @@ var roleUpgrader = {
             }
         }
         else {
-            var nearestSource = creep.pos.findClosestByRange(FIND_SOURCES);
-            if (creep.harvest(nearestSource) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(nearestSource);
+            if (creep.harvest(upgraderSource) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(upgraderSource);
             }
         }
     }

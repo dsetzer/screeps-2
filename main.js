@@ -16,13 +16,13 @@ var bodies = {
   fastWorker: [WORK, CARRY, MOVE, MOVE],
 };
 
-var minHarvesters = 5;
-var minUpgraders = 4;
-var minBuilders = 3;
+var minHarvesters = 6;
+var minUpgraders = 8;
+var minBuilders = 4;
 
 // clear creeps stored in memory that have sinced died
 function RIPTheBoys() {
-  for (var i in Memory.creeps) {
+  for (let i in Memory.creeps) {
     if (!Game.creeps[i]) {
       delete Memory.creeps[i];
     }
@@ -38,15 +38,18 @@ module.exports.loop = function () {
   var currHarvesters = _.sum(Game.creeps, (c) => c.memory.role === 'harvester');
   var currUpgraders = _.sum(Game.creeps, (c) => c.memory.role === 'upgrader');
   var currBuilders = _.sum(Game.creeps, (c) => c.memory.role === 'builder');
-  if (currHarvesters < minHarvesters) {
-    sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
-    console.log('spawning harvester');
-  } else if (currUpgraders < minUpgraders) {
-    sp1.createCreep(bodies.fastWorker, null, {role: 'upgrader'});
-    console.log('spawning upgrader');
-  } else {
-    sp1.createCreep(bodies.worker, null, {role: 'builder'});
-    console.log('spawning builder');
+  console.log(`${currHarvesters} hrvs, ${currUpgraders} upgs, ${currBuilders} blds`);
+  if ((sp1.energy >= 300)) {
+    if (currHarvesters < minHarvesters) {
+      sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
+      console.log('spawning harvester');
+    } else if (currUpgraders < minUpgraders) {
+      sp1.createCreep(bodies.fastWorker, null, {role: 'upgrader'});
+      console.log('spawning upgrader');
+    } else {
+      sp1.createCreep(bodies.worker, null, {role: 'builder'});
+      console.log('spawning builder');
+    }
   }
 
   // tut tower code
