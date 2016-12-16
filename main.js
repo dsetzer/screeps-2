@@ -4,7 +4,7 @@ var roleBuilder = require('role.builder');
 var sp1 = Game.spawns.Spawn1;
 
 var roles = [
-  'harvester',
+  // 'harvester',
   'upgrader',
   'builder',
 ];
@@ -16,8 +16,8 @@ var bodies = {
 module.exports.loop = function () {
   
   var creepCount = Object.keys(Game.creeps).length;
-  var zeroOneTwo = Math.round(Math.random() * 2);
-  var randomRole = roles[zeroOneTwo];
+  var randomNumber = Math.round(Math.random());
+  var randomRole = roles[randomNumber];
   if (creepCount < 15) {
     if ((sp1.canCreateCreep(bodies.generic, null) === OK) && (sp1.energy >= 200)) {
       sp1.createCreep(bodies.generic, null, {role: randomRole});
