@@ -15,14 +15,16 @@ var bodies = {
 
 module.exports.loop = function () {
   
+  var creepCount = Object.keys(Game.creeps).length;
   var zeroOneTwo = Math.round(Math.random() * 2);
   var randomRole = roles[zeroOneTwo];
-
-  if ((sp1.canCreateCreep(bodies.generic, null) === OK) && (sp1.energy >= 200)) {
-    sp1.createCreep(bodies.generic, null, {role: randomRole});
-    console.log('spawning', randomRole);
+  if (creepCount < 15) {
+    if ((sp1.canCreateCreep(bodies.generic, null) === OK) && (sp1.energy >= 200)) {
+      sp1.createCreep(bodies.generic, null, {role: randomRole});
+      console.log('spawning', randomRole);
+    }
   }
-  
+
   var tower = Game.getObjectById('TOWER_ID');
   if(tower) {
     var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
