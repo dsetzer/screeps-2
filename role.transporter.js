@@ -15,6 +15,7 @@ var roleTransporter = {
         }
       }
     } else {
+      var depositLocation;
       // if it's carrying energy
       var emptyStructures = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
@@ -23,13 +24,22 @@ var roleTransporter = {
             structure.structureType == STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
         }
       });
-      var closestEmptyStruct = creep.pos.findClosestByRange(emptyStructures);
-      if (creep.transfer(closestEmptyStruct, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(closestEmptyStruct);
+      if (emptyStructures.length) {
+        depositLocation = creep.pos.findClosestByRange(emptyStructures);
+      } else {
+        var emptyStorage = creep.room.find(FIND_STRUCTURES, {
+          filter: (structure) => {
+            return ((structure.structureType == STRUCTURE_CONTAINER))
+          }
+        });
+        depositLocation = creep.pos.findClosestByRange(emptyStorage);
+      }
+      if (creep.transfer(depositLocation, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(depositLocation);
       }
       // deposit back in spawn if enough was already transferred
-      if (creep.transfer(closestEmptyStruct, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(closestEmptyStruct);
+      if (creep.transfer(depositLocation, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(depositLocation);
       }
     }
   }

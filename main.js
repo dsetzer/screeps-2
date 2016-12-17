@@ -18,16 +18,16 @@ var roles = [
 ];
 
 var bodies = {
-  WORKER: [WORK, WORK, WORK, CARRY, CARRY, MOVE], // 450
-  WORKER_FAST: [WORK, WORK, CARRY, CARRY, MOVE, MOVE], // 400
-  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE], // 400
-  MINER: [WORK, WORK, WORK, WORK, MOVE], // 450
+  WORKER: [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE],
+  WORKER_FAST: [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
+  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+  MINER: [WORK, WORK, WORK, WORK, WORK, MOVE],
 };
 
-var minHarvesters = 2;
+var minHarvesters = 0;
 var minUpgraders = 6;
 var minBuilders = 6;
-var minJanitors = 2;
+var minJanitors = 1;
 var minTransporters = 4;
 var minMiners = 4;
 
@@ -71,7 +71,15 @@ module.exports.loop = function () {
       `);
   }
   if (currMiners < minMiners) {
-    sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: 'SOUTH'});
+    var assignment;
+    if (Memory.northMiners < currMiners / 2) {
+      assignment = 'NORTH'
+      Memory.northMiners++;
+    } else if (Memory.southMiners < currMiners / 2) {
+      assignment = 'SOUTH';
+      Memory.southMiners++;
+    }
+    sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: assignment});
   }
   if (currHarvesters < minHarvesters) {
     sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
