@@ -2,6 +2,7 @@ var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
 var roleJanitor = require('role.janitor');
+var roleTransporter = require('role.transporter');
 var sp1 = Game.spawns.Spawn1;
 var _ = require('lodash');
 
@@ -11,17 +12,21 @@ var roles = [
   'upgrader',
   'builder',
   'janitor',
+  'transporter',
 ];
 
 var bodies = {
-  worker: [WORK, WORK, CARRY, MOVE],
-  fastWorker: [WORK, CARRY, MOVE, MOVE],
+  WORKER: [WORK, WORK, CARRY, MOVE], // 300
+  WORKER_FAST: [WORK, CARRY, MOVE, MOVE], // 250
+  TRANSPORTER: [CARRY, CARRY, MOVE, MOVE], // 300
+  MINER: [WORK, WORK, CARRY, CARRY, MOVE], // 350
 };
 
 var minHarvesters = 4;
 var minUpgraders = 5;
 var minBuilders = 5;
-var minJanitors = 1;
+var minJanitors = 2;
+var minTransporters = 1;
 
 // clear creeps stored in memory that have sinced died
 function RIPTheBoys() {
@@ -47,31 +52,40 @@ module.exports.loop = function () {
   var currUpgraders = roleCount('upgrader');
   var currBuilders = roleCount('builder');
   var currJanitors = roleCount('janitor');
+  var currTransporters = roleCount('transporter');
   if (loopThrottle % 10 === 0) {
     console.log(
       `
-      ${currHarvesters} hrvs,
-      ${currUpgraders} upgs,
-      ${currBuilders} blds,
-      ${currJanitors} jtrs
+      ${currHarvesters} HRV
+      ${currUpgraders} UPG
+      ${currBuilders} BLD
+      ${currJanitors} JNT
+      ${currTransporters} TRN
       `);
   }
   if (currHarvesters < minHarvesters) {
-    sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
-    // console.log('spawning harvester');
-  } else if (currUpgraders < minUpgraders) {
-    sp1.createCreep(bodies.fastWorker, null, {role: 'upgrader'});
-    // console.log('spawning upgrader');
-  } else if (currJanitors < minJanitors) {
-    sp1.createCreep(bodies.worker, null, {role: 'janitor'});
-    // console.log('spawning janitor');
-  } else {
-    sp1.createCreep(bodies.worker, null, {role: 'builder'});
-    // console.log('spawning builder');
+    sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
+  }
+  if (currUpgraders < minUpgraders) {
+    sp1.createCreep(bodies.WORKER_FAST, `UPG${Game.time}`, {role: 'upgrader'});
+  }
+  if (currBuilders < minBuilders) {
+    sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
+  }
+  if (currJanitors < minJanitors) {
+    sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
+  }
+  if (currTransporters < minTransporters) {
+    sp1.createCreep(
+      bodies.TRANSPORTER,
+      `TRN${Game.time}`,
+      {role: 'transporter'}
+    );
   }
 
+
   // tut tower code
-  var tower = Game.getObjectById('TOWER_ID');
+/*  var tower = Game.getObjectById('TOWER_ID');
   if(tower) {
     var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: (structure) => structure.hits < structure.hitsMax
@@ -84,7 +98,7 @@ module.exports.loop = function () {
     if(closestHostile) {
       tower.attack(closestHostile);
     }
-  }
+  }*/
     // run role modules
   for(var name in Game.creeps) {
     var creep = Game.creeps[name];
@@ -99,6 +113,9 @@ module.exports.loop = function () {
     }
     if(creep.memory.role == 'janitor') {
       roleJanitor.run(creep);
+    }
+    if(creep.memory.role == 'transporter') {
+      roleTransporter.run(creep);
     }
   }
 }
