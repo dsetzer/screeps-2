@@ -3,6 +3,7 @@ var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
 var roleJanitor = require('role.janitor');
 var roleTransporter = require('role.transporter');
+var roleMiner = require('role.miner');
 var sp1 = Game.spawns.Spawn1;
 var _ = require('lodash');
 
@@ -13,20 +14,22 @@ var roles = [
   'builder',
   'janitor',
   'transporter',
+  'miner',
 ];
 
 var bodies = {
-  WORKER: [WORK, WORK, CARRY, MOVE], // 300
-  WORKER_FAST: [WORK, CARRY, MOVE, MOVE], // 250
-  TRANSPORTER: [CARRY, CARRY, MOVE, MOVE], // 300
-  MINER: [WORK, WORK, CARRY, CARRY, MOVE], // 350
+  WORKER: [WORK, WORK, WORK, CARRY, CARRY, MOVE], // 450
+  WORKER_FAST: [WORK, WORK, CARRY, CARRY, MOVE, MOVE], // 400
+  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE], // 400
+  MINER: [WORK, WORK, WORK, WORK, MOVE], // 450
 };
 
 var minHarvesters = 4;
-var minUpgraders = 5;
+var minUpgraders = 4;
 var minBuilders = 5;
 var minJanitors = 2;
-var minTransporters = 1;
+var minTransporters = 4;
+var minMiners = 4;
 
 // clear creeps stored in memory that have sinced died
 function RIPTheBoys() {
@@ -42,6 +45,8 @@ function roleCount(role) {
 };
 
 module.exports.loop = function () {
+  // Memory.someData = { foo: 'bar' };
+  // console.log(Memory.someData.foo);
   var loopThrottle = Game.time.toString().slice(5);
   // clear dead creeps from memory
   RIPTheBoys();
@@ -53,6 +58,7 @@ module.exports.loop = function () {
   var currBuilders = roleCount('builder');
   var currJanitors = roleCount('janitor');
   var currTransporters = roleCount('transporter');
+  var currMiners = roleCount('miner');
   if (loopThrottle % 10 === 0) {
     console.log(
       `
@@ -61,7 +67,11 @@ module.exports.loop = function () {
       ${currBuilders} BLD
       ${currJanitors} JNT
       ${currTransporters} TRN
+      ${currMiners} MIN
       `);
+  }
+  if (currMiners < minMiners) {
+    sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: 'SOUTH'});
   }
   if (currHarvesters < minHarvesters) {
     sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
@@ -79,7 +89,7 @@ module.exports.loop = function () {
     sp1.createCreep(
       bodies.TRANSPORTER,
       `TRN${Game.time}`,
-      {role: 'transporter'}
+      {role: 'transporter', assignment: 'SOUTH'}
     );
   }
 
@@ -116,6 +126,9 @@ module.exports.loop = function () {
     }
     if(creep.memory.role == 'transporter') {
       roleTransporter.run(creep);
+    }
+    if(creep.memory.role == 'miner') {
+      roleMiner.run(creep);
     }
   }
 }
