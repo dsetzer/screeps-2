@@ -24,9 +24,9 @@ var bodies = {
   MINER: [WORK, WORK, WORK, WORK, MOVE], // 450
 };
 
-var minHarvesters = 4;
-var minUpgraders = 4;
-var minBuilders = 5;
+var minHarvesters = 2;
+var minUpgraders = 6;
+var minBuilders = 6;
 var minJanitors = 2;
 var minTransporters = 4;
 var minMiners = 4;

@@ -14,7 +14,6 @@ var roleTransporter = {
           creep.moveTo(sp1);
         }
       }
-
     } else {
       // if it's carrying energy
       var emptyStructures = creep.room.find(FIND_STRUCTURES, {
