@@ -53,23 +53,21 @@ module.exports.loop = function () {
       ${currHarvesters} hrvs,
       ${currUpgraders} upgs,
       ${currBuilders} blds,
-      ${currJanitors} janitors
+      ${currJanitors} jtrs
       `);
   }
-  if ((sp1.energy >= 300)) {
-    if (currHarvesters < minHarvesters) {
-      sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
-      console.log('spawning harvester');
-    } else if (currUpgraders < minUpgraders) {
-      sp1.createCreep(bodies.fastWorker, null, {role: 'upgrader'});
-      console.log('spawning upgrader');
-    } else if (currJanitors < minJanitors) {
-      sp1.createCreep(bodies.worker, null, {role: 'janitor'});
-      console.log('spawning janitor');
-    } else {
-      sp1.createCreep(bodies.worker, null, {role: 'builder'});
-      console.log('spawning builder');
-    }
+  if (currHarvesters < minHarvesters) {
+    sp1.createCreep(bodies.fastWorker, null, {role: 'harvester'});
+    // console.log('spawning harvester');
+  } else if (currUpgraders < minUpgraders) {
+    sp1.createCreep(bodies.fastWorker, null, {role: 'upgrader'});
+    // console.log('spawning upgrader');
+  } else if (currJanitors < minJanitors) {
+    sp1.createCreep(bodies.worker, null, {role: 'janitor'});
+    // console.log('spawning janitor');
+  } else {
+    sp1.createCreep(bodies.worker, null, {role: 'builder'});
+    // console.log('spawning builder');
   }
 
   // tut tower code
