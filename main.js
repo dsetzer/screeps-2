@@ -18,17 +18,21 @@ var roles = [
 ];
 
 var bodies = {
-  WORKER: [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE],
+  WORKER: [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE],
   WORKER_FAST: [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-  MINER: [WORK, WORK, WORK, WORK, WORK, MOVE],
+  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+  MINER: [WORK, WORK, WORK, WORK, WORK, WORK, MOVE],
+  // WORKER: [WORK, CARRY, MOVE],
+  // WORKER_FAST: [WORK, CARRY, MOVE, MOVE],
+  // TRANSPORTER: [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
+  // MINER: [WORK, WORK, MOVE],
 };
 
-var minHarvesters = 0;
+var minHarvesters = 2;
 var minUpgraders = 6;
-var minBuilders = 6;
-var minJanitors = 1;
-var minTransporters = 4;
+var minBuilders = 3;
+var minJanitors = 2;
+var minTransporters = 5;
 var minMiners = 4;
 
 // clear creeps stored in memory that have sinced died
@@ -81,18 +85,18 @@ module.exports.loop = function () {
     }
     sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: assignment});
   }
-  if (currHarvesters < minHarvesters) {
-    sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
-  }
+  // if (currHarvesters < minHarvesters) {
+  //   sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
+  // }
   if (currUpgraders < minUpgraders) {
-    sp1.createCreep(bodies.WORKER_FAST, `UPG${Game.time}`, {role: 'upgrader'});
+    sp1.createCreep(bodies.WORKER_FAST, `UPG${Game.time}`, {role: 'upgrader', working: false});
   }
-  if (currBuilders < minBuilders) {
-    sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
-  }
-  if (currJanitors < minJanitors) {
-    sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
-  }
+  // if (currBuilders < minBuilders) {
+  //   sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
+  // }
+  // if (currJanitors < minJanitors) {
+  //   sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
+  // }
   if (currTransporters < minTransporters) {
     sp1.createCreep(
       bodies.TRANSPORTER,
@@ -103,7 +107,7 @@ module.exports.loop = function () {
 
 
   // tut tower code
-/*  var tower = Game.getObjectById('TOWER_ID');
+  var tower = Game.getObjectById('TOWER_ID');
   if(tower) {
     var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: (structure) => structure.hits < structure.hitsMax
@@ -116,7 +120,7 @@ module.exports.loop = function () {
     if(closestHostile) {
       tower.attack(closestHostile);
     }
-  }*/
+  }
     // run role modules
   for(var name in Game.creeps) {
     var creep = Game.creeps[name];
