@@ -22,18 +22,19 @@ var bodies = {
   WORKER_FAST: [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
   TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
   MINER: [WORK, WORK, WORK, WORK, WORK, MOVE],
+  BABBY: [WORK, CARRY, MOVE],
   // WORKER: [WORK, CARRY, MOVE],
   // WORKER_FAST: [WORK, CARRY, MOVE, MOVE],
   // TRANSPORTER: [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
   // MINER: [WORK, WORK, MOVE],
 };
 
-var minHarvesters = 2;
+var minHarvesters = 6;
 var minUpgraders = 6;
-var minBuilders = 3;
+var minBuilders = 2;
 var minJanitors = 0;
-var minTransporters = 3;
-var minMiners = 4;
+var minTransporters = 0;
+var minMiners = 0;
 
 // clear creeps stored in memory that have sinced died
 function RIPTheBoys() {
@@ -55,8 +56,8 @@ module.exports.loop = function () {
   // clear dead creeps from memory
   RIPTheBoys();
   // find current creeps & count
-  // var currentCreeps = Game.spawns.Spawn1.room.find(FIND_MY_CREEPS);
-  // var creepCount = currentCreeps.length;
+  var currentCreeps = Game.spawns.Spawn1.room.find(FIND_MY_CREEPS);
+  var creepCount = currentCreeps.length;
   var currHarvesters = roleCount('harvester');
   var currUpgraders = roleCount('upgrader');
   var currBuilders = roleCount('builder');
@@ -74,10 +75,10 @@ module.exports.loop = function () {
       ${currMiners} MIN
       `);
   }
-  if (currMiners < minMiners) {
-    var assignment;
-    sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: assignment});
-  }
+  // if (currMiners < minMiners) {
+  //   var assignment;
+  //   sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: assignment});
+  // }
   if (currHarvesters < minHarvesters) {
     sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
   }
@@ -87,16 +88,19 @@ module.exports.loop = function () {
   if (currBuilders < minBuilders) {
     sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
   }
-  if (currJanitors < minJanitors) {
-    sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
+  if (creepCount === 0) {
+    sp1.createCreep(bodies.BABBY, `HV${Game.time}`, {role: 'harvester'});
   }
-  if (currTransporters < minTransporters) {
-    sp1.createCreep(
-      bodies.TRANSPORTER,
-      `TRN${Game.time}`,
-      {role: 'transporter', assignment: 'SOUTH'}
-    );
-  }
+  // if (currJanitors < minJanitors) {
+  //   sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
+  // }
+  // if (currTransporters < minTransporters) {
+  //   sp1.createCreep(
+  //     bodies.TRANSPORTER,
+  //     `TRN${Game.time}`,
+  //     {role: 'transporter', assignment: 'SOUTH'}
+  //   );
+  // }
 
 
   // tut tower code

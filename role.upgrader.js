@@ -39,6 +39,13 @@ module.exports = {
                 }
             }
             else {
+              var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+              if (energyPiles.length) {
+                var closestEnergy = creep.pos.findClosestByRange(energyPiles);
+                if (creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
+                  creep.moveTo(closestEnergy);
+                }
+              } else {
                 // find closest source
                 var source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
                 // try to harvest energy, if the source is not in range
@@ -46,6 +53,7 @@ module.exports = {
                     // move towards it
                     creep.moveTo(source);
                 }
+              }
             }
         }
     }
