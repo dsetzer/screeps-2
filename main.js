@@ -31,7 +31,7 @@ var bodies = {
 var minHarvesters = 2;
 var minUpgraders = 6;
 var minBuilders = 3;
-var minJanitors = 1;
+var minJanitors = 0;
 var minTransporters = 3;
 var minMiners = 4;
 
@@ -82,7 +82,7 @@ module.exports.loop = function () {
     sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
   }
   if (currUpgraders < minUpgraders) {
-    sp1.createCreep(bodies.WORKER_FAST, `UPG${Game.time}`, {role: 'upgrader', working: false});
+    sp1.createCreep(bodies.WORKER, `UPG${Game.time}`, {role: 'upgrader', working: false});
   }
   if (currBuilders < minBuilders) {
     sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
