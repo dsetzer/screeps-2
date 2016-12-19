@@ -18,10 +18,10 @@ var roles = [
 ];
 
 var bodies = {
-  WORKER: [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE],
-  WORKER_FAST: [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
-  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-  MINER: [WORK, WORK, WORK, WORK, WORK, WORK, MOVE],
+  WORKER: [WORK, WORK, CARRY, CARRY, MOVE],
+  WORKER_FAST: [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+  TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+  MINER: [WORK, WORK, WORK, WORK, WORK, MOVE],
   // WORKER: [WORK, CARRY, MOVE],
   // WORKER_FAST: [WORK, CARRY, MOVE, MOVE],
   // TRANSPORTER: [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
@@ -31,8 +31,8 @@ var bodies = {
 var minHarvesters = 2;
 var minUpgraders = 6;
 var minBuilders = 3;
-var minJanitors = 2;
-var minTransporters = 5;
+var minJanitors = 1;
+var minTransporters = 3;
 var minMiners = 4;
 
 // clear creeps stored in memory that have sinced died
@@ -76,27 +76,20 @@ module.exports.loop = function () {
   }
   if (currMiners < minMiners) {
     var assignment;
-    if (Memory.northMiners < currMiners / 2) {
-      assignment = 'NORTH'
-      Memory.northMiners++;
-    } else if (Memory.southMiners < currMiners / 2) {
-      assignment = 'SOUTH';
-      Memory.southMiners++;
-    }
     sp1.createCreep(bodies.MINER, `MIN${Game.time}`, {role: 'miner', assignment: assignment});
   }
-  // if (currHarvesters < minHarvesters) {
-  //   sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
-  // }
+  if (currHarvesters < minHarvesters) {
+    sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
+  }
   if (currUpgraders < minUpgraders) {
     sp1.createCreep(bodies.WORKER_FAST, `UPG${Game.time}`, {role: 'upgrader', working: false});
   }
-  // if (currBuilders < minBuilders) {
-  //   sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
-  // }
-  // if (currJanitors < minJanitors) {
-  //   sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
-  // }
+  if (currBuilders < minBuilders) {
+    sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
+  }
+  if (currJanitors < minJanitors) {
+    sp1.createCreep(bodies.WORKER, `JNT${Game.time}`, {role: 'janitor'});
+  }
   if (currTransporters < minTransporters) {
     sp1.createCreep(
       bodies.TRANSPORTER,
