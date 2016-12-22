@@ -18,6 +18,7 @@ test Game.notify
 cache common paths + reusePath 
 reserve middle room for harvesting
 customCreate()
+do a better job of harvesting resources dropped by invaders
 proper defenses
 track sourceStats in global memory - room+locs, currHarvs, nrgRemining
 track controllers in global memory for claiming * 2 in E67, *1 in E68 etc
