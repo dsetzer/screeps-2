@@ -1,5 +1,8 @@
 var roleJanitor = {
   run: function(creep) {
+      if (creep.carry.energy === 0) {
+          creep.memory.repairing = false;
+      }
     if ((creep.carry.energy < creep.carryCapacity) && (!creep.memory.repairing)) {
       var energySource;
       var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
@@ -10,14 +13,15 @@ var roleJanitor = {
           creep.moveTo(closestEnergy);
         }
       } else {
-        if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(sources[0]);
+          var closestSource = creep.pos.findClosestByRange(sources);
+        if (creep.harvest(closestSource) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(closestSource);
         }
       }
     }
     else {
       var targets = creep.room.find(FIND_STRUCTURES, {
-        filter: object => object.hits < object.hitsMax
+        filter: object => ((object.hits < 20000) && (object.hits < (object.hitsMax * 0.5)))
       });
       
       targets.sort((a,b) => a.hits - b.hits);
@@ -25,8 +29,9 @@ var roleJanitor = {
       if(targets.length > 0) {
         // console.log(targets[0]);
         creep.memory.repairing = true;
-        if(creep.repair(targets[0]) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(targets[0]);
+        var closestTarget = creep.pos.findClosestByPath(targets);
+        if(creep.repair(closestTarget) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(closestTarget);
         }
       }
     }
