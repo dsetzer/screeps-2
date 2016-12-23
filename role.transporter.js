@@ -12,10 +12,10 @@ var roleTransporter = {
           creep.moveTo(closestEnergy);
         }
       } else {
-        // remove from containers that are at least half full, put into nearest structure, if full put in storage
+        // remove from containers, put into nearest structure, if full put in storage
         var containers = creep.room.find(FIND_STRUCTURES, {
           filter: (structure) => {
-            return (structure.structureType == STRUCTURE_CONTAINER && structure.store[RESOURCE_ENERGY] > (structure.storeCapacity * 0.5))
+            return (structure.structureType == STRUCTURE_CONTAINER)
             }
           });
           var closestContainer = creep.pos.findClosestByRange(containers);

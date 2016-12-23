@@ -44,7 +44,7 @@ var minJanitors = 1;
 var minTransporters = 6;
 var minMiners = 0;
 var minFlagMiners = 0;
-var minClaimers = 2;
+var minClaimers = 0;
 
 // clear creeps stored in memory that have sinced died
 function RIPTheBoys() {
