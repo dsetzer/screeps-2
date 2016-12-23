@@ -21,7 +21,7 @@ var roleJanitor = {
     }
     else {
       var targets = creep.room.find(FIND_STRUCTURES, {
-        filter: object => ((object.hits < 50000) && (object.hits < (object.hitsMax * 0.5)))
+        filter: object => ((object.hits < 75000) && (object.hits < (object.hitsMax * 0.66)))
       });
       
       targets.sort((a,b) => a.hits - b.hits);

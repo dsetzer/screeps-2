@@ -37,11 +37,11 @@ var bodies = {
   ARCHER: [RANGED_ATTACK, MOVE],
 };
 
-var minHarvesters = 6;
-var minUpgraders = 5;
-var minBuilders = 1;
-var minJanitors = 1;
-var minTransporters = 6;
+var minHarvesters = 8;
+var minUpgraders = 6;
+var minBuilders = 4;
+var minJanitors = 3;
+var minTransporters = 8;
 var minMiners = 0;
 var minFlagMiners = 0;
 var minClaimers = 0;
