@@ -37,13 +37,13 @@ var bodies = {
   ARCHER: [RANGED_ATTACK, MOVE],
 };
 
-var minHarvesters = 12;
+var minHarvesters = 6;
 var minUpgraders = 5;
 var minBuilders = 1;
-var minJanitors = 2;
-var minTransporters = 5;
+var minJanitors = 1;
+var minTransporters = 6;
 var minMiners = 0;
-var minFlagMiners = 1;
+var minFlagMiners = 0;
 var minClaimers = 2;
 
 // clear creeps stored in memory that have sinced died
@@ -62,7 +62,7 @@ function roleCount(role) {
 
 module.exports.loop = function () {
     var rc = Game.getObjectById('5836b87c8b8b9619519f21e8');
-    var rcTicks = (rc !== null ? rc.reservation.ticksToEnd : null);
+    //var rcTicks = (rc !== null ? rc.reservation.ticksToEnd : null);
     var hostiles = sp1.room.find(FIND_HOSTILE_CREEPS)
     if (hostiles.length > 0) {
         sp1.createCreep(bodies.ARCHER, `ARC${Game.time}`, {role: 'fighter'});
@@ -146,7 +146,7 @@ module.exports.loop = function () {
     console.log('bld');
     sp1.createCreep(bodies.WORKER, `BLD${Game.time}`, {role: 'builder'});
   }
-      else if ((currClaimers < minClaimers) && (rcTicks === null || rcTicks < 2000)) {
+      else if ((currClaimers < minClaimers)) {
     console.log('clm');
     sp1.createCreep(bodies.CLAIMER, `CLM${Game.time}`, {role: 'claimer'});
   }
