@@ -9,7 +9,7 @@
 
 module.exports = {
     run: function(creep) {
-        var target = 'E67S71';
+        var target = 'E73S18';
         creep.body.forEach((part) => {
             if (part.type === 'carry') {
                 creep.memory.carrying = false;
@@ -25,11 +25,6 @@ module.exports = {
         } else {
             // harvest shit if we can
             if((creep.room.controller) && (creep.memory.claimer)) {
-                if (!creep.room.controller.sign) {
-                    if(creep.signController(creep.room.controller, 'DEUS VULT') == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(creep.room.controller);
-                    }
-                }
                 if(creep.reserveController(creep.room.controller) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(creep.room.controller);
                 }

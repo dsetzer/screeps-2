@@ -1,58 +1,56 @@
-var roleTransporter = {
+var roleThief = {
   /** @param {Creep} creep **/
   run: function(creep) {
-          var targetRoom;
+      var home = 'E72S18';
+      var targetRoom = 'E72S17';
       if (creep.memory.assignment == 'south') {
           targetRoom = 'E72S19'
       }
       if (creep.memory.assignment == 'east') {
           targetRoom = 'E73S18'
       }
-      if (creep.memory.assignment) {
+
+    // not full, need to harvest
+    if (creep.carry.energy < creep.carryCapacity && creep.memory.harvesting) {
         if (creep.room.name !== targetRoom) {
             var move = new RoomPosition(6, 11, targetRoom)
               creep.moveTo(move)
               return;
-        }  
-      }
-      
-    var potentials = [];
-    var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
-    var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
-        filter: (e) => {
-            return (e.amount >= (creep.carryCapacity - creep.carry.energy))
         }
-    });
-    // var containers = creep.room.find(FIND_STRUCTURES, {
-    //     filter: (structure) => {
-    //         return (structure.structureType == STRUCTURE_CONTAINER && structure.store[RESOURCE_ENERGY] > creep.carryCapacity)
-    //     }
-    // });
-        var containers = creep.room.find(FIND_STRUCTURES, {
-        filter: (structure) => {
-            return (structure.structureType == STRUCTURE_CONTAINER)
-        }
-    });
-    var closestContainer = creep.pos.findClosestByRange(containers);
-    if (creep.carry.energy < creep.carryCapacity && creep.memory.harvesting) {
+              
+        //   if (creep.room.name !== targetRoom) {
+        //       console.log(creep.room.findExitTo(targetRoom));
+        //       return;
+        //   }
+        // look for energy on floor and find closest
+        // TOADD: if nrg > threshold, place into container first
+        var potentials = [];
+        // look for containers with energy and find closest
+      var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+        var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
+            filter: (e) => {
+                return (e.amount > creep.carryCapacity)
+            }
+        });
         if (worthEnergy.length) {
             var closestEnergy = creep.pos.findClosestByRange(worthEnergy);
-            //console.log('worth', closestEnergy.amount)
+            console.log('worth', closestEnergy.amount)
             if(creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
                 creep.moveTo(closestEnergy);
-                //console.log('1 orr')
-            } else if (creep.pickup(closestEnergy) == OK) {
-                console.log('energy picked up');
-                creep.memory.quickDrop = true;
-                //console.log('err', creep.pickup(closestEnergy))
             }
         } else {
-            if (containers.length) {
-                potentials.push(closestContainer);
-                if(creep.withdraw(closestContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(closestContainer);
-                }
+            var containers = creep.room.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType == STRUCTURE_CONTAINER && structure.store[RESOURCE_ENERGY] > creep.carryCapacity)
             }
+        });
+        if (containers.length) {
+            var closestContainer = creep.pos.findClosestByRange(containers);
+            potentials.push(closestContainer);
+            if(creep.withdraw(closestContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(closestContainer);
+            }
+        }
         }
         
         // console.log(`closest: container ${closestContainer} nrg ${closestEnergy}`)
@@ -86,19 +84,15 @@ var roleTransporter = {
       creep.memory.harvesting = true;
     }
     
-    if (creep.memory.quickDrop) {
-      console.log('qDrop')
-      if (creep.carry.energy > 0) {
-          if (creep.transfer(closestContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-              creep.moveTo(closestContainer)
-          }
-        creep.memory.quickDrop = false;
-      }
-  }
-    
     if (!creep.memory.harvesting) {
       // full, go store energy
       // standard
+               if (creep.room.name !== home) {
+            var move = new RoomPosition(6, 11, 'E72S18')
+              creep.moveTo(move)
+              return;
+        }
+          
       var potentialTargets;
       var stores = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
@@ -120,4 +114,4 @@ var roleTransporter = {
   }
 };
 
-module.exports = roleTransporter;
+module.exports = roleThief;

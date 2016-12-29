@@ -2,23 +2,46 @@ var roleBuilder = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
+      var home = 'E72S18';
+      var targetRoom;
+      if (creep.memory.assignment == 'south') {
+          targetRoom = 'E72S19'
+      }
+      if (creep.memory.assignment == 'east') {
+          targetRoom = 'E73S18'
+      }
+/*
+    // not full, need to harvest
+    if (creep.memory.assignment !== undefined) {
+        
+        if (creep.room.name !== targetRoom) {
+            var move = new RoomPosition(6, 11, targetRoom)
+              creep.moveTo(move)
+              console.log(creep.name, move)
+              return;
+        }
+    }*/
+        
+        
         if(creep.memory.building && creep.carry.energy == 0) {
             creep.memory.building = false;
-            creep.say('harvesting');
         }
         if(!creep.memory.building && creep.carry.energy == creep.carryCapacity) {
             creep.memory.building = true;
-            creep.say('building');
         }
-
-        if(creep.memory.building) {
+        
+        if (creep.memory.assignment && creep.room.name !== targetRoom) {
+            creep.memory.repositioning = true;
+            var trg = new RoomPosition(25, 25, targetRoom);
+            creep.moveTo(trg);
+        }
+        
+        if (creep.memory.assignment && creep.room.name == targetRoom) {
+            creep.memory.repositioning = false;
+        }
+            
+        if(creep.memory.building && !creep.memory.repositioning) {
             // if creep spawned in with assignment in memory, go to target room before building
-            if((creep.memory.assignment !== undefined) && (creep.room.name !== creep.memory.assignment)) {
-                var targetRoom = creep.memory.assignment;
-                var trg = new RoomPosition(25, 25, targetRoom);
-                creep.moveTo(trg);
-                // creep.room.findExitTo(E68S71)
-            } else {
                 // else build in this room
                 var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
                 var closestTarget = creep.pos.findClosestByPath(targets);
@@ -43,22 +66,58 @@ var roleBuilder = {
             //         }
             //     }
             // }
-        }
         else {
-            var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
-                        if (energyPiles.length) {
-                var closestEnergy = creep.pos.findClosestByRange(energyPiles);
+            var withdrawTarget;
+            if (creep.memory.assignment !== undefined) {
+                var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+                var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
+                    filter: (e) => {
+                        return (e.amount >= (creep.carryCapacity - creep.carry.energy))
+                    }
+                });
+                var closestEnergy = creep.pos.findClosestByPath(worthEnergy);
                 if (creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(closestEnergy);
                 }
-              } else {
-                 var sources = creep.room.find(FIND_SOURCES);
-            var closestSource = creep.pos.findClosestByPath(sources);
-            if(creep.harvest(closestSource) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(closestSource);
-            } 
-              }
-            
+                return;
+            }
+            // remove from containers
+            var cnts = creep.room.find(FIND_STRUCTURES, {
+              filter: (s) => {
+                return ((s.structureType == STRUCTURE_CONTAINER) && (s.store[RESOURCE_ENERGY] >= 50))
+                }
+             });
+            var blds = creep.room.find(FIND_STRUCTURES, {
+              filter: (s) => {
+                return ((s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION) && (s.energy >= 50))
+                }
+              });
+            if (cnts.length) {
+                withdrawTarget = creep.pos.findClosestByRange(cnts);
+                if(creep.withdraw(withdrawTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+              creep.moveTo(withdrawTarget);
+            }
+            } else if (blds.length) {
+              withdrawTarget = creep.pos.findClosestByRange(blds);
+              if(creep.withdraw(withdrawTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+              creep.moveTo(withdrawTarget);
+            }
+            } else {
+                // find closest source
+                var source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+                // try to harvest energy, if the source is not in range
+                if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
+                    // move towards it
+                    creep.moveTo(source);
+                }
+                // withdrawTarget = creep.room.storage;
+        //                 var sources = creep.room.find(FIND_SOURCES_ACTIVE);
+        // // var hardCodedHarvesterSource = sources[1];
+        // var harvesterSource = creep.pos.findClosestByPath(sources);
+        // if (creep.harvest(harvesterSource) == ERR_NOT_IN_RANGE) {
+        //   creep.moveTo(harvesterSource);
+        // }
+            }
         }
     }
 };

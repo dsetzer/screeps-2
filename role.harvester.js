@@ -1,16 +1,22 @@
 var roleHarvester = {
   /** @param {Creep} creep **/
   run: function(creep) {
+    //   var pos = creep.room.lookForAtArea(LOOK_TERRAIN, 25,7, 12, 14);
+    //     console.log(pos);
+    //     for (let p in pos) {
+    //         console.log(pos)
+    //     }
     // not full, need to harvest
     if(creep.carry.energy < creep.carryCapacity && creep.memory.harvesting) {
         var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
-      if (energyPiles.length) {
-          // todo fix hrvs moving to temporarily dropped energy piles, check it's closer && worth the journey?
-        var closestEnergy = creep.pos.findClosestByRange(energyPiles);
-        if (creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(closestEnergy);
-        }
-      }
+    //   if (energyPiles.length) {
+    //       console.log(energyPiles.length)
+    //       // todo fix hrvs moving to temporarily dropped energy piles, check it's closer && worth the journey?
+    //     var closestEnergy = creep.pos.findClosestByRange(energyPiles);
+    //     if (creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
+    //       creep.moveTo(closestEnergy);
+    //     }
+    //   }
         var sources = creep.room.find(FIND_SOURCES_ACTIVE);
         // var hardCodedHarvesterSource = sources[1];
         var harvesterSource = creep.pos.findClosestByPath(sources);
