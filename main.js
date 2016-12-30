@@ -56,23 +56,6 @@ builders: dynamically build in constructionSites in other rooms
 builder #s: reduce over all contructionSites for total Progress required, spawn num based on that
 */
 
-var bodies = {
-//   WORKER: [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-//   WORKER_FAST: [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-//   MINER: [WORK, WORK, WORK, WORK, MOVE],
-//   BABBY: [WORK, CARRY, MOVE, MOVE],
-//   CLAIMER: [CLAIM, MOVE],
-//   TRANSPORTER: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-//   ARCHER: [RANGED_ATTACK, RANGED_ATTACK, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE],
-//   WORKER: [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
-//   WORKER_FAST: [WORK, WORK, CARRY, MOVE, MOVE, MOVE],
-//   MINER: [WORK, WORK, WORK, MOVE],
-//   BABBY: [WORK, CARRY, MOVE, MOVE],
-//   CLAIMER: [CLAIM, MOVE],
-//   TRANSPORTER: [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
-//   ARCHER: [RANGED_ATTACK, TOUGH, MOVE, MOVE],
-};
-
 var minHarvesters = 0;
 var minUpgraders = 2;
 var minBuilders = 1;
@@ -125,24 +108,28 @@ sourceData = [
 */
 
 module.exports.loop = function () {
+  if (Game.time === 16397489) {
+      Game.notify('500 ticks until south claim')
+  }
     var thisRoom;
     var thisSpawn;
+    var rooms = [];
     for(let name in Game.rooms) {
-        var thisRoom = Game.rooms[name]
-        var thisSpawn = thisRoom.find(FIND_MY_SPAWNS)[0];
+        thisRoom = Game.rooms[name]
+        thisSpawn = thisRoom.find(FIND_MY_SPAWNS)[0];
         console.log(thisRoom, thisSpawn)
+        rooms.push({thisRoom, thisSpawn})
     }
-    if (Game.time === 16397489) {
-        Game.notify('500 ticks until south claim')
-    }
+    
 
+/*
     // check if we need more miners at a source
     Memory.sourceData.forEach((s) => {
         // console.log(s.id);
         if (s.currentMiners < s.mineableSquares) {
             // console.log(`need ${s.mineableSquares - s.currentMiners} more miners at ${s.id}`)
         }
-    });
+    });*/
     // cache room name
     var r = Game.rooms[sp1.room.name];
     
@@ -153,7 +140,7 @@ module.exports.loop = function () {
     }
     // stats
     console.log(`>>>>>> energystats: ${r.stats().nrg}/${r.stats().nrgCapacity} full: ${Memory.fullCounter}`)
-    // add source data to memory if not already set (to throttled loop later)
+/*    // add source data to memory if not already set (to throttled loop later)
     if (Memory.sourceData === undefined) {
         console.log('source data needed')
         var sources = sp1.room.find(FIND_SOURCES);
@@ -187,7 +174,7 @@ module.exports.loop = function () {
             sourceData.set(source);
         });
     }
-
+*/
     // var rc = Game.getObjectById('5836b87c8b8b9619519f21e8');
     // //var rcTicks = (rc !== null ? rc.reservation.ticksToEnd : null);
     // var hostiles = sp1.room.find(FIND_HOSTILE_CREEPS)
@@ -204,14 +191,14 @@ module.exports.loop = function () {
   // find current creeps & count
   var currentCreeps = Game.spawns.Spawn1.room.find(FIND_MY_CREEPS);
   var creepCount = currentCreeps.length;
-  var currHarvesters = roleCount('harvester');
-  var currUpgraders = roleCount('upgrader');
-  var currBuilders = roleCount('builder');
-  var currJanitors = roleCount('janitor');
-  var currTransporters = roleCount('transporter');
-  var currMiners = roleCount('miner');
-  var currFlagMiners = roleCount('flagMiner');
-  var currClaimers = roleCount('claimer');
+  var currHarvesters = roleCount('harvester', currentCreeps);
+  var currUpgraders = roleCount('upgrader', currentCreeps);
+  var currBuilders = roleCount('builder', currentCreeps);
+  var currJanitors = roleCount('janitor', currentCreeps);
+  var currTransporters = roleCount('transporter', currentCreeps);
+  var currMiners = roleCount('miner', currentCreeps);
+  var currFlagMiners = roleCount('flagMiner', currentCreeps);
+  var currClaimers = roleCount('claimer', currentCreeps);
   if (loopThrottle % 10 === 0) {
     console.log(
       `
@@ -302,11 +289,7 @@ module.exports.loop = function () {
         'harvester',
         'flagMiner',
     ];
-    
-    for (var name in Game.creeps) {
-        var creep = Game.creeps[name];
-    }
-      
+
     // run role modules
   for(var name in Game.creeps) {
     var creep = Game.creeps[name];
