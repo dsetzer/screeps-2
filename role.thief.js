@@ -2,13 +2,25 @@ var roleThief = {
   /** @param {Creep} creep **/
   run: function(creep) {
       var home = 'E72S18';
-      var targetRoom = 'E72S17';
+      var targetRoom;
+      if (creep.memory.assignment === 'east') {
+          targetRoom = 'E73S18';
+          if (creep.room.name !== targetRoom) {
+            creep.moveTo(new RoomPosition(49,22, 'E72S18'))
+          return;  
+          }
+              
+          } else
       if (creep.memory.assignment == 'south') {
           targetRoom = 'E72S19'
       }
-      if (creep.memory.assignment == 'east') {
-          targetRoom = 'E73S18'
+      
+      console.log(creep.room.name, targetRoom, creep.memory.assignment, creep.memory.east)
+      
+      if (creep.room.name == targetRoom) {
+          console.log(creep.name, 'arrived')
       }
+      
 
     // not full, need to harvest
     if (creep.carry.energy < creep.carryCapacity && creep.memory.harvesting) {

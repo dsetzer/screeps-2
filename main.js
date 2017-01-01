@@ -57,10 +57,10 @@ builder #s: reduce over all contructionSites for total Progress required, spawn 
 */
 
 var minHarvesters = 0;
-var minUpgraders = 2;
+var minUpgraders = 1;
 var minBuilders = 1;
-var minJanitors = 2;
-var minTransporters = 1;
+var minJanitors = 0;
+var minTransporters = 2;
 var minMiners = 2;
 var minFlagMiners = 0;
 var minClaimers = 0;
@@ -108,18 +108,116 @@ sourceData = [
 */
 
 module.exports.loop = function () {
-  if (Game.time === 16397489) {
-      Game.notify('500 ticks until south claim')
-  }
     var thisRoom;
     var thisSpawn;
     var rooms = [];
+    if (Game.time === 16437269) {
+        Game.notify('~500 ticks to north safemode')
+    }
+    // room loop
     for(let name in Game.rooms) {
         thisRoom = Game.rooms[name]
         thisSpawn = thisRoom.find(FIND_MY_SPAWNS)[0];
-        console.log(thisRoom, thisSpawn)
+        // console.log(thisRoom, thisSpawn)
         rooms.push({thisRoom, thisSpawn})
-    }
+        
+            var hostiles = thisRoom.find(FIND_HOSTILE_CREEPS)
+            if (hostiles.length > 0) {
+                Game.notify(`hostile creeps spotted in ${thisRoom}`)
+            }
+        
+        if (thisRoom.stats().nrg === thisRoom.stats().nrgCapacity) {
+            Memory.fullCounter++;
+        } else {
+            Memory.fullCounter = 0;
+        }
+        // stats
+        console.log(`>>>>>> ${thisRoom} energystats: ${thisRoom.stats().nrg}/${thisRoom.stats().nrgCapacity} full: ${Memory.fullCounter}`)
+      
+      var currConstructions = thisRoom.find(FIND_CONSTRUCTION_SITES);
+      var currentCreeps = thisRoom.find(FIND_MY_CREEPS);
+      var creepCount = currentCreeps.length;
+      var currHarvesters = roleCount('harvester', currentCreeps);
+      var currUpgraders = roleCount('upgrader', currentCreeps);
+      var currBuilders = roleCount('builder', currentCreeps);
+      var currJanitors = roleCount('janitor', currentCreeps);
+      var currTransporters = roleCount('transporter', currentCreeps);
+      var currMiners = roleCount('miner', currentCreeps);
+      var currFlagMiners = roleCount('flagMiner', currentCreeps);
+      var currClaimers = roleCount('claimer', currentCreeps);
+      var loopThrottle = Game.time.toString().slice(5);
+      if (loopThrottle % 10 === 0) {
+        console.log(
+          `
+          ${currHarvesters} / ${minHarvesters} HRV
+          ${currUpgraders} / ${minUpgraders} UPG
+          ${currBuilders} / ${minBuilders} BLD
+          ${currJanitors} / ${minJanitors} JNT
+          ${currTransporters} / ${minTransporters} TRN
+          ${currMiners} / ${minMiners} MIN
+          ${currClaimers} / ${minClaimers} CLM
+          `);
+      }
+      var manualSpawning = false;
+      if (thisSpawn !== undefined && !manualSpawning && thisRoom.stats().nrg === thisRoom.stats().nrgCapacity) {
+        if (currMiners < minMiners) {
+            console.log('+mn');
+            thisSpawn.create(thisRoom.stats().nrg, `MN${Game.time}`, 'miner');
+        }
+        else if (currUpgraders < minUpgraders) {
+            console.log('+ug');
+            thisSpawn.create(thisRoom.stats().nrg, `UG${Game.time}`, 'upgrader');
+        }
+        else if (currTransporters < minTransporters) {
+            console.log('+tr');
+            thisSpawn.create(thisRoom.stats().nrg, `TR${Game.time}`, 'transporter');
+        }
+        else if ((currConstructions > 0) && (currBuilders < minBuilders)) {
+            console.log('+bd');
+            thisSpawn.create(thisRoom.stats().nrg, `BD${Game.time}`, 'builder');
+        }
+        else if (currJanitors < minJanitors) {
+            console.log('+jt');
+            thisSpawn.create(thisRoom.stats().nrg, `JT${Game.time}`, 'janitor');
+        }
+        else if (Memory.fullCounter >= 15 && currUpgraders < 5) {
+            // if (currConstructions > 0) {
+            //     console.log('+bd++');
+            //     thisSpawn.create(thisRoom.stats().nrg, `BD${Game.time}`, 'builder');
+            // }
+            // else if (currUpgraders < currJanitors) {
+            //     console.log('+ug++');
+            // if (isEven(Game.time)) {
+                thisSpawn.create(thisRoom.stats().nrg, `UG${Game.time}`, 'upgrader'); 
+            // } else if (isOdd(Game.time)) {
+            //    thisSpawn.create(thisRoom.stats().nrg, `JT${Game.time}`, 'janitor');
+            // }
+                
+            // } else if (currJanitors < currUpgraders) {
+            //     console.log('+jt++');
+            //     
+            // }
+            
+            }
+        }
+        
+          // hasty tower code
+      var twr2 = Game.getObjectById('58669b38441564414412abfb');
+      if (twr) {
+        var closestHostile = twr.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+        if (closestHostile) {
+          twr.attack(closestHostile);
+        }
+      }
+            var twr = Game.getObjectById('5863f43b740e95ff270ee201');
+      if (twr) {
+        var closestHostile = twr.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+        if (closestHostile) {
+          twr.attack(closestHostile);
+        }
+      }
+        
+    } // end of room loop
     
 
 /*
@@ -130,16 +228,7 @@ module.exports.loop = function () {
             // console.log(`need ${s.mineableSquares - s.currentMiners} more miners at ${s.id}`)
         }
     });*/
-    // cache room name
-    var r = Game.rooms[sp1.room.name];
-    
-    if (r.stats().nrg === r.stats().nrgCapacity) {
-        Memory.fullCounter++;
-    } else {
-        Memory.fullCounter = 0;
-    }
-    // stats
-    console.log(`>>>>>> energystats: ${r.stats().nrg}/${r.stats().nrgCapacity} full: ${Memory.fullCounter}`)
+
 /*    // add source data to memory if not already set (to throttled loop later)
     if (Memory.sourceData === undefined) {
         console.log('source data needed')
@@ -177,75 +266,14 @@ module.exports.loop = function () {
 */
     // var rc = Game.getObjectById('5836b87c8b8b9619519f21e8');
     // //var rcTicks = (rc !== null ? rc.reservation.ticksToEnd : null);
-    // var hostiles = sp1.room.find(FIND_HOSTILE_CREEPS)
-    // if (hostiles.length > 0) {
-    //     // Game.notify()
-    // }
+
+
 
   
-  var structures = sp1.room.find(FIND_MY_STRUCTURES);
-  var currConstructions = Object.keys(Game.constructionSites).length;
-  var loopThrottle = Game.time.toString().slice(5);
   // clear dead creeps from memory
   RIPTheBoys();
   // find current creeps & count
-  var currentCreeps = Game.spawns.Spawn1.room.find(FIND_MY_CREEPS);
-  var creepCount = currentCreeps.length;
-  var currHarvesters = roleCount('harvester', currentCreeps);
-  var currUpgraders = roleCount('upgrader', currentCreeps);
-  var currBuilders = roleCount('builder', currentCreeps);
-  var currJanitors = roleCount('janitor', currentCreeps);
-  var currTransporters = roleCount('transporter', currentCreeps);
-  var currMiners = roleCount('miner', currentCreeps);
-  var currFlagMiners = roleCount('flagMiner', currentCreeps);
-  var currClaimers = roleCount('claimer', currentCreeps);
-  if (loopThrottle % 10 === 0) {
-    console.log(
-      `
-      ${currHarvesters} / ${minHarvesters} HRV
-      ${currUpgraders} / ${minUpgraders} UPG
-      ${currBuilders} / ${minBuilders} BLD
-      ${currJanitors} / ${minJanitors} JNT
-      ${currTransporters} / ${minTransporters} TRN
-      ${currMiners} / ${minMiners} MIN
-      ${currClaimers} / ${minClaimers} CLM
-      `);
-  }
-  
-    if (currMiners < minMiners) {
-        console.log('+mn');
-        sp1.create(r.stats().nrg, `MN${Game.time}`, 'miner');
-    }
-    else if (currUpgraders < minUpgraders) {
-        console.log('+ug');
-        sp1.create(r.stats().nrg, `UG${Game.time}`, 'upgrader');
-    }
-    else if (currTransporters < minTransporters) {
-        console.log('+tr');
-        sp1.create(r.stats().nrg, `TR${Game.time}`, 'transporter');
-    }
-    else if ((currConstructions > 0) && (currBuilders < minBuilders)) {
-        console.log('+bd');
-        sp1.create(r.stats().nrg, `BD${Game.time}`, 'builder');
-    }
-    else if (currJanitors < minJanitors) {
-        console.log('+jt');
-        sp1.create(r.stats().nrg, `JT${Game.time}`, 'janitor');
-    }
-    else if (Memory.fullCounter >= 20) {
-        // if (currConstructions > 0) {
-        //     console.log('+bd++');
-        //     sp1.create(r.stats().nrg, `BD${Game.time}`, 'builder');
-        // }
-        // else if (currUpgraders < currJanitors) {
-        //     console.log('+ug++');
-            sp1.create(r.stats().nrg, `UG${Game.time}`, 'upgrader'); 
-        // } else if (currJanitors < currUpgraders) {
-        //     console.log('+jt++');
-        //     sp1.create(r.stats().nrg, `JT${Game.time}`, 'janitor');
-        // }
-        
-    }
+
 
     
 
@@ -270,16 +298,9 @@ module.exports.loop = function () {
    
     
 
-      // hasty tower code
-      var twr = Game.getObjectById('5856003c72ff937740610eae');
-      if (twr) {
-        var closestHostile = twr.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if (closestHostile) {
-          twr.attack(closestHostile);
-        }
-      }
+
       
-    var roles = [
+/*    var roles = [
         'miner',
         'transporter',
         'upgrader',
@@ -288,7 +309,7 @@ module.exports.loop = function () {
         'fighter',
         'harvester',
         'flagMiner',
-    ];
+    ];*/
 
     // run role modules
   for(var name in Game.creeps) {
@@ -328,6 +349,9 @@ module.exports.loop = function () {
     }
             if(creep.memory.role == 'spawnKiller') {
       roleSpawnKiller.run(creep);
+    }
+    if (creep.name == 'Dave') {
+        creep.say('hi')
     }
   }
 }

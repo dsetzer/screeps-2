@@ -9,7 +9,7 @@
 
 module.exports = {
     run: function(creep) {
-        var target = 'E73S18';
+        var target = 'E72S19';
         creep.body.forEach((part) => {
             if (part.type === 'carry') {
                 creep.memory.carrying = false;

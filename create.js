@@ -10,11 +10,12 @@ module.exports =  function() {
           if (energy > 550) {
               body = [WORK, WORK, WORK, WORK, WORK, MOVE]
           } else {
-                       var maxWork = 5;
+          var maxWork = 5;
           body.push(MOVE);
+          body.push(WORK);
           creepCost += COST_PART;
           console.log(`move pushed, remaining: ${energy - creepCost}`)
-            for (let i = 0; i <= maxWork && creepCost <= (energy - creepCost); i++) {
+            for (let i = 0; i < maxWork && creepCost <= (energy - creepCost); i++) {
             body.push(WORK);
             creepCost += COST_WORK;
             console.log(`work pushed, remaining: ${energy} - ${creepCost} = ${energy - creepCost}`)

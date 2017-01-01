@@ -67,49 +67,93 @@ var roleBuilder = {
             //     }
             // }
         else {
-            var withdrawTarget;
-            if (creep.memory.assignment !== undefined) {
-                var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+            // var withdrawTarget;
+            // if (creep.memory.assignment !== undefined) {
+            //     var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+            //     var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
+            //         filter: (e) => {
+            //             return (e.amount >= (creep.carryCapacity - creep.carry.energy))
+            //         }
+            //     });
+            //     var closestEnergy = creep.pos.findClosestByPath(worthEnergy);
+            //     if (creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
+            //         creep.moveTo(closestEnergy);
+            //     }
+            //     return;
+            // }
+            // // remove from containers
+            // var cnts = creep.room.find(FIND_STRUCTURES, {
+            //   filter: (s) => {
+            //     return ((s.structureType == STRUCTURE_CONTAINER) && (s.store[RESOURCE_ENERGY] >= 50))
+            //     }
+            //  });
+            // var blds = creep.room.find(FIND_STRUCTURES, {
+            //   filter: (s) => {
+            //     return ((s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION) && (s.energy >= 50))
+            //     }
+            //   });
+            // if (cnts.length) {
+            //     withdrawTarget = creep.pos.findClosestByRange(cnts);
+            //     if(creep.withdraw(withdrawTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            //   creep.moveTo(withdrawTarget);
+            // }
+            // } else if (blds.length) {
+            //   withdrawTarget = creep.pos.findClosestByRange(blds);
+            //   if(creep.withdraw(withdrawTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            //   creep.moveTo(withdrawTarget);
+            // }
+            // } else {
+            
+              var blds = creep.room.find(FIND_STRUCTURES, {
+              filter: (s) => {
+                return ((s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION || STRUCTURE_CONTAINER) && (s.energy >= 50))
+                }
+              });
+              
+              var harvestDecisions = [];
+              
+
+            
                 var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
                     filter: (e) => {
                         return (e.amount >= (creep.carryCapacity - creep.carry.energy))
                     }
                 });
-                var closestEnergy = creep.pos.findClosestByPath(worthEnergy);
-                if (creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(closestEnergy);
+                
+                  if (blds.length) {
+                      harvestDecisions.push(creep.pos.findClosestByPath(blds))
+                  }
+                
+                if (worthEnergy.length) {
+                    harvestDecisions.push(creep.pos.findClosestByPath(worthEnergy))
                 }
-                return;
-            }
-            // remove from containers
-            var cnts = creep.room.find(FIND_STRUCTURES, {
-              filter: (s) => {
-                return ((s.structureType == STRUCTURE_CONTAINER) && (s.store[RESOURCE_ENERGY] >= 50))
+                
+                if (harvestDecisions.length) {
+                    var decision = creep.pos.findClosestByPath(harvestDecisions);
+                    console.log(decision, decision.amount, decision.energy, decision.hits)
+                    if (decision.hits !== undefined) {
+                      if (creep.withdraw(decision, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                           creep.moveTo(decision)
+                        }  
+                    } else if (decision.amount !== undefined) {
+                        if (creep.pickup(decision) == ERR_NOT_IN_RANGE) {
+                           creep.moveTo(decision)
+                        }
+                    }
+                    
                 }
-             });
-            var blds = creep.room.find(FIND_STRUCTURES, {
-              filter: (s) => {
-                return ((s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION) && (s.energy >= 50))
+
+                else {
+                                        // find closest source
+                    var source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
+                    // try to harvest energy, if the source is not in range
+                    if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
+                        // move towards it
+                        creep.moveTo(source);
+                    }
                 }
-              });
-            if (cnts.length) {
-                withdrawTarget = creep.pos.findClosestByRange(cnts);
-                if(creep.withdraw(withdrawTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-              creep.moveTo(withdrawTarget);
-            }
-            } else if (blds.length) {
-              withdrawTarget = creep.pos.findClosestByRange(blds);
-              if(creep.withdraw(withdrawTarget, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-              creep.moveTo(withdrawTarget);
-            }
-            } else {
-                // find closest source
-                var source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
-                // try to harvest energy, if the source is not in range
-                if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
-                    // move towards it
-                    creep.moveTo(source);
-                }
+    
+
                 // withdrawTarget = creep.room.storage;
         //                 var sources = creep.room.find(FIND_SOURCES_ACTIVE);
         // // var hardCodedHarvesterSource = sources[1];
@@ -117,7 +161,7 @@ var roleBuilder = {
         // if (creep.harvest(harvesterSource) == ERR_NOT_IN_RANGE) {
         //   creep.moveTo(harvesterSource);
         // }
-            }
+            // }
         }
     }
 };

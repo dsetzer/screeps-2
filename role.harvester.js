@@ -19,7 +19,7 @@ var roleHarvester = {
     //   }
         var sources = creep.room.find(FIND_SOURCES_ACTIVE);
         // var hardCodedHarvesterSource = sources[1];
-        var harvesterSource = creep.pos.findClosestByPath(sources);
+        var harvesterSource = sources[0];
         if (creep.harvest(harvesterSource) == ERR_NOT_IN_RANGE) {
           creep.moveTo(harvesterSource);
         }

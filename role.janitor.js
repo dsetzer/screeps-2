@@ -4,8 +4,27 @@ var roleJanitor = {
           creep.memory.repairing = false;
       }
     if ((creep.carry.energy < creep.carryCapacity) && (!creep.memory.repairing)) {
-
-            // find closest container
+        
+            var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+            var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
+                filter: (e) => {
+                    return (e.amount >= (creep.carryCapacity - creep.carry.energy))
+                }
+            });
+            
+                if (worthEnergy.length) {
+                var closestEnergy = creep.pos.findClosestByRange(worthEnergy);
+                //console.log('worth', closestEnergy.amount)
+                if(creep.pickup(closestEnergy) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(closestEnergy);
+                    //console.log('1 orr')
+                } else if (creep.pickup(closestEnergy) == OK) {
+                    console.log('energy picked up');
+                    creep.memory.quickDrop = true;
+                    //console.log('err', creep.pickup(closestEnergy))
+                }
+            } else {
+                            // find closest container
             let container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: s => (s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE) &&
                              s.store[RESOURCE_ENERGY] > (creep.carryCapacity - creep.carry.energy)
@@ -33,6 +52,9 @@ var roleJanitor = {
                 creep.moveTo(spawn);
             }
             }
+            }
+
+
 
     }
     else {
@@ -70,7 +92,7 @@ var roleJanitor = {
             
         }*/
         var targets = creep.room.find(FIND_STRUCTURES, {
-            filter: s => ((s.hits < 35000) && (s.hits < s.hitsMax))
+            filter: s => ((s.hits < 100000) && (s.hits < s.hitsMax))
         });
       
         targets.sort((a,b) => a.hits - b.hits);
@@ -79,6 +101,7 @@ var roleJanitor = {
         // console.log(targets[0]);
         creep.memory.repairing = true;
         var closestTarget = creep.pos.findClosestByPath(targets);
+        var bestTarget = targets[0]
         if(creep.repair(closestTarget) == ERR_NOT_IN_RANGE) {
           creep.moveTo(closestTarget);
         }

@@ -1,23 +1,17 @@
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
-        //var currRoom = creep.room;
-              var home = 'E72S18';
-      var targetRoom = 'E72S17';
-      if (creep.memory.assignment == 'south') {
-          targetRoom = 'E72S19'
-      }
-      if (creep.memory.assignment == 'east') {
-          targetRoom = 'E73S18'
-      }
+    //   var home = 'E72S18';
+    //   var targetRoom;
+    //   if (creep.memory.assignment == 'east') {
+    //       targetRoom = 'E73S18';
+    //       if (creep.room.name !== targetRoom) {
+    //         creep.moveTo(new RoomPosition(49,22, 'E72S18'))
+    //       return;  
+    //       }
+              
+    //       }
       
-      if (creep.memory.assignment) {
-        if (creep.room.name !== targetRoom) {
-            var move = new RoomPosition(6, 11, targetRoom)
-              creep.moveTo(move)
-              return;
-        }  
-      }
 
         
         
@@ -49,10 +43,18 @@ module.exports = {
             // if creep is supposed to get energy
         else {
             
+            // var energyPiles = creep.room.find(FIND_DROPPED_ENERGY);
+            // var worthEnergy = creep.room.find(FIND_DROPPED_ENERGY, {
+            //     filter: (e) => {
+            //         return (e.amount >= (creep.carryCapacity))
+            //     }
+            // });
+            
+            
             // find closest container
             let container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: s => (s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE) &&
-                             s.store[RESOURCE_ENERGY] > 0
+                             s.store[RESOURCE_ENERGY] > creep.carryCapacity
             });
             // if one was found
             if (container != undefined) {
@@ -71,12 +73,13 @@ module.exports = {
                     creep.moveTo(source);
                 }
             let spawn = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: s => (s.structureType == STRUCTURE_SPAWN) && s.energy > 0
+                filter: s => (s.structureType == STRUCTURE_SPAWN) && s.energy > creep.carryCapacity
             });
             if (creep.withdraw(spawn, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                 creep.moveTo(spawn);
             }
             }
+            // end energy hrv
         }
     }
 };
