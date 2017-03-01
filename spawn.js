@@ -4,6 +4,7 @@ mod.priorityHigh = [
         Creep.setup.worker,
         Creep.setup.miner,
         Creep.setup.hauler,
+        Creep.setup.allocator,
         Creep.setup.upgrader];
 mod.priorityLow = [
         Creep.setup.mineralMiner,
@@ -29,6 +30,14 @@ mod.extend = function(){
             }
         }
         return busy;
+    };
+    Spawn.prototype.renewToFull = function(creep) {
+      if (creep.ticksToLive < 1450) {
+        console.log(`renewing ${creep}, @ ${creep.ticksToLive}`);
+        this.renewCreep(creep);
+      } else {
+        console.log(`finished renewing ${creep}`);
+      }
     };
     Spawn.prototype.createCreepBySetup = function(setup){
         if( DEBUG && TRACE ) trace('Spawn',{setupType:this.type, rcl:this.room.controller.level, energy:this.room.energyAvailable, maxEnergy:this.room.energyCapacityAvailable, Spawn:'createCreepBySetup'}, 'creating creep');
@@ -72,6 +81,7 @@ mod.extend = function(){
         return result;
     };
     Spawn.prototype.create = function(body, name, behaviour, destiny){
+      console.log(this, 'Spawn.create', body);
         if( body.length == 0 ) return false;
         var newName = this.createCreep(body, name, null);
         if( name == newName || translateErrorCode(newName) === undefined ){

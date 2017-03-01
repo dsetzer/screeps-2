@@ -3,6 +3,7 @@ module.exports = mod;
 // load task memory & flush caches
 mod.flush = function () {
     const tasks = [
+      Task.dismantle,
         Task.guard,
         Task.defense,
         Task.claim,
@@ -22,6 +23,7 @@ mod.flush = function () {
 // register tasks (hook up into events)
 mod.register = function () {
     const tasks = [
+      Task.dismantle,
         Task.guard,
         Task.defense,
         Task.claim,

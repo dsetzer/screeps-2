@@ -30,9 +30,8 @@ mod.nextAction = function(creep){
             // Choose the closest
             if( deposit.length > 0 ){
                 let target = creep.pos.findClosestByRange(deposit);
-                if( target.structureType == STRUCTURE_STORAGE && this.assign(creep, Creep.action.storing, target) ) return;
+                if( target.structureType == STRUCTURE_STORAGE && this.assign(creep, Creep.action.storing) ) return;
                 else if( this.assign(creep, Creep.action.charging, target) ) return;
-                else if( this.assign(creep, Creep.action.storing) ) return; // prefer storage
             }
             if( this.assign(creep, Creep.action.charging) ) return;
             // no deposit :/ 

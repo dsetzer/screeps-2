@@ -1,6 +1,6 @@
-let setup = new Creep.Setup('healer');
+let setup = new Creep.Setup('dismantler');
 module.exports = setup;
-setup.minControllerLevel = 7;
+setup.minControllerLevel = 6;
 setup.globalMeasurement = true;
 setup.RCL = {
     1: setup.none,
@@ -11,7 +11,7 @@ setup.RCL = {
     6: setup.none,
     7: {
         fixedBody: [],
-        multiBody: [MOVE, HEAL],
+        multiBody: [MOVE, WORK],
         minAbsEnergyAvailable: 300,
         minEnergyAvailable: 0.8,
         maxMulti: 4,
@@ -19,7 +19,7 @@ setup.RCL = {
         maxWeight: 0
     },
     8: {
-        fixedBody: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE,MOVE, HEAL, HEAL,HEAL,HEAL,HEAL, HEAL,HEAL],
+        fixedBody: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         multiBody: [],
         minAbsEnergyAvailable: 300,
         minEnergyAvailable: 0.8,

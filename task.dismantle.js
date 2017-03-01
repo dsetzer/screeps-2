@@ -1,83 +1,107 @@
-// This task will react on pioneer flags - 4 for Green/White, 1 for Green/Red
+// This task will react on yellow/yellow flags, sending a dismantleing creep to the flags position.
 let mod = {};
 module.exports = mod;
+mod.minControllerLevel = 3;
 // hook into events
 mod.register = () => {
     // when a new flag has been found (occurs every tick, for each flag)
-    Flag.found.on( flag => Task.pioneer.handleFlagFound(flag) );
+    Flag.found.on( flag => Task.dismantle.handleFlagFound(flag) );
     // a creep starts spawning
-    Creep.spawningStarted.on( params => Task.pioneer.handleSpawningStarted(params) );
+    Creep.spawningStarted.on( params => Task.dismantle.handleSpawningStarted(params) );
     // a creep completed spawning
-    Creep.spawningCompleted.on( creep => Task.pioneer.handleSpawningCompleted(creep) );
+    Creep.spawningCompleted.on( creep => Task.dismantle.handleSpawningCompleted(creep) );
     // a creep will die soon
-    Creep.predictedRenewal.on( creep => Task.pioneer.handleCreepDied(creep.name) );
+    Creep.predictedRenewal.on( creep => Task.dismantle.handleCreepDied(creep.name) );
     // a creep died
-    Creep.died.on( name => Task.pioneer.handleCreepDied(name) );
-    // a room collapsed
-    Room.collapsed.on( room => Task.pioneer.handleRoomDied(room) );
+    Creep.died.on( name => Task.dismantle.handleCreepDied(name) );
 };
-mod.handleRoomDied = room => {
-    // try to spawn a worker
-    let pioneer = true;
-    if( room.energyAvailable > 199 ) {
-        // flush high queue
-        room.spawnQueueHigh.splice(0, room.spawnQueueHigh.length);
-        pioneer = !Task.spawn(
-            Task.pioneer.creep.worker, // creepDefinition
-            { // destiny
-                task: 'pioneer', // taskName
-                targetName: room.name // targetName
-            }, 
-            { // spawn room selection params
-                explicit: room.name
-            }
-        );
-    } 
-    if( pioneer ){
-        // ensure room has a pioneer flag
-        let pos = new RoomPosition(25, 25, room.name);
-        let flag = FlagDir.find(FLAG_COLOR.claim.pioneer, pos, true);
-        if( !flag ){
-            room.createFlag(pos, null, FLAG_COLOR.claim.pioneer.color, FLAG_COLOR.claim.pioneer.secondaryColor);
-        }
-    }
-}
 // for each flag
 mod.handleFlagFound = flag => {
-    // if it is a pioneer single or spawn
-    if( flag.color == FLAG_COLOR.claim.pioneer.color && flag.secondaryColor == FLAG_COLOR.claim.pioneer.secondaryColor ){
+    // if it is a yellow/yellow flag
+    if( flag.color == FLAG_COLOR.destroy.dismantle.color && flag.secondaryColor == FLAG_COLOR.destroy.dismantle.secondaryColor ){
         // check if a new creep has to be spawned
-        Task.pioneer.checkForRequiredCreeps(flag);
+        Task.dismantle.checkForRequiredCreeps(flag);
     }
+};
+mod.creep = {
+    dismantle: {
+        fixedBody: [
+          TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+          WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE
+        ],
+        // fixedBody: [WORK, MOVE],
+        multiBody: [TOUGH, WORK, MOVE, MOVE],
+        maxMulti: 12,
+        name: "dismantler", 
+        behaviour: "dismantler", 
+        queue: 'High'
+    },
+    healer: {
+        fixedBody: [
+          TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+          HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL, HEAL,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE
+        ],
+        // fixedBody: [HEAL, MOVE],
+        multiBody: [TOUGH, HEAL, MOVE, MOVE],
+        maxMulti: 12,
+        name: "healer", 
+        behaviour: "healer", 
+        queue: 'High'
+    },
+    
+    
 };
 // check if a new creep has to be spawned
 mod.checkForRequiredCreeps = (flag) => {
-    //only when room is owned
-    if( !flag || (flag.room && !flag.room.controller.my) ) return console.log("Pioneer room not owned");
-    
     // get task memory
-    let memory = Task.pioneer.memory(flag);
-
-    // decide number of pioneers required
-    let count = memory.queued.length + memory.spawning.length + memory.running.length;
-        
+    let memory = Task.dismantle.memory(flag);
     // count creeps assigned to task
-    // if creep count below requirement spawn a new creep creep 
+    let count = memory.queued.length + memory.spawning.length + memory.running.length;
+    // if creep count below requirement spawn a new creep creep
     if( count < 1 ) {
         Task.spawn(
-            Task.pioneer.creep.pioneer, // creepDefinition
+            Task.dismantle.creep.dismantle, // creepDefinition
             { // destiny
-                task: 'pioneer', // taskName
+                task: 'dismantle', // taskName
                 targetName: flag.name, // targetName
-                flagName: flag.name // custom
+                flagName: flag.name, // custom
+                buddy: `healer-${flag.name}-${count + 1}`,
             }, 
             { // spawn room selection params
                 targetRoom: flag.pos.roomName, 
-                minEnergyCapacity: 400, // weight of fixedBody
-                rangeRclRatio: 2 // stronger preference of higher RCL rooms
+                minEnergyCapacity: 200, 
+                rangeRclRatio: 1.8 // stronger preference of higher RCL rooms
             },
             creepSetup => { // callback onQueued
-                let memory = Task.pioneer.memory(Game.flags[creepSetup.destiny.targetName]);
+                let memory = Task.dismantle.memory(Game.flags[creepSetup.destiny.targetName]);
+                memory.queued.push({
+                    room: creepSetup.queueRoom,
+                    name: creepSetup.name,
+                    targetName: flag.name
+                });
+            }
+        );
+        Task.spawn(
+            Task.dismantle.creep.healer, // creepDefinition
+            { // destiny
+                task: 'dismantle', // taskName
+                targetName: flag.name, // targetName
+                flagName: flag.name, // custom
+                buddy: `dismantler-${flag.name}-${count + 1}`,
+            }, 
+            { // spawn room selection params
+                targetRoom: flag.pos.roomName, 
+                minEnergyCapacity: 200, 
+                rangeRclRatio: 1.8 // stronger preference of higher RCL rooms
+            },
+            creepSetup => { // callback onQueued
+                let memory = Task.dismantle.memory(Game.flags[creepSetup.destiny.targetName]);
                 memory.queued.push({
                     room: creepSetup.queueRoom,
                     name: creepSetup.name,
@@ -90,20 +114,20 @@ mod.checkForRequiredCreeps = (flag) => {
 // when a creep starts spawning
 mod.handleSpawningStarted = params => { // params: {spawn: spawn.name, name: creep.name, destiny: creep.destiny}
     // ensure it is a creep which has been queued by this task (else return)
-    if ( !params.destiny || !params.destiny.task || params.destiny.task != 'pioneer' )
+    if ( !params.destiny || !params.destiny.task || params.destiny.task != 'dismantle' )
         return;
     // get flag which caused queueing of that creep
     let flag = Game.flags[params.destiny.flagName];
     if (flag) {
         // get task memory
-        let memory = Task.pioneer.memory(flag);
+        let memory = Task.dismantle.memory(flag);
         // save spawning creep to task memory
         memory.spawning.push(params);
         // clean/validate task memory queued creeps
         let queued = []
         let validateQueued = o => {
             let room = Game.rooms[o.room];
-            if( (room.spawnQueueMedium.some( c => c.name == o.name)) || (room.spawnQueueLow.some( c => c.name == o.name)) ){
+            if(room.spawnQueueMedium.some( c => c.name == o.name)){
                 queued.push(o);
             }
         };
@@ -114,17 +138,18 @@ mod.handleSpawningStarted = params => { // params: {spawn: spawn.name, name: cre
 // when a creep completed spawning
 mod.handleSpawningCompleted = creep => {
     // ensure it is a creep which has been requested by this task (else return)
-    if (!creep.data || !creep.data.destiny || !creep.data.destiny.task || creep.data.destiny.task != 'pioneer')
+    if (!creep.data || !creep.data.destiny || !creep.data.destiny.task || creep.data.destiny.task != 'dismantle')
         return;
     // get flag which caused request of that creep
     let flag = Game.flags[creep.data.destiny.flagName];
+    console.log('handleSpawningCompleted', flag, flag.pos.roomName);
     if (flag) {
         // calculate & set time required to spawn and send next substitute creep
         // TODO: implement better distance calculation
         creep.data.predictedRenewal = creep.data.spawningTime + (routeRange(creep.data.homeRoom, flag.pos.roomName)*50);
 
         // get task memory
-        let memory = Task.pioneer.memory(flag);
+        let memory = Task.dismantle.memory(flag);
         // save running creep to task memory
         memory.running.push(creep.name);
         // clean/validate task memory spawning creeps
@@ -145,20 +170,20 @@ mod.handleCreepDied = name => {
     // get creep memory
     let mem = Memory.population[name];
     // ensure it is a creep which has been requested by this task (else return)
-    if (!mem || !mem.destiny || !mem.destiny.task || mem.destiny.task != 'pioneer')
+    if (!mem || !mem.destiny || !mem.destiny.task || mem.destiny.task != 'dismantle')
         return;
     // get flag which caused request of that creep
     let flag = Game.flags[mem.destiny.flagName];
     if (flag) {
         // get task memory
-        let memory = Task.pioneer.memory(flag);
+        let memory = Task.dismantle.memory(flag);
         // clean/validate task memory running creeps
         let running = []
         let validateRunning = o => {
             // invalidate dead or old creeps for predicted spawning
             let creep = Game.creeps[o];
-            // invalidate old creeps for predicted spawning
             if( !creep || !creep.data ) return
+            // invalidate old creeps for predicted spawning
             // TODO: better distance calculation
             let prediction;
             if( creep.data.predictedRenewal ) prediction = creep.data.predictedRenewal;
@@ -176,26 +201,12 @@ mod.handleCreepDied = name => {
 mod.memory = (flag) => {
     if( !flag.memory.tasks ) 
         flag.memory.tasks = {};
-    if( !flag.memory.tasks.pioneer ) {
-        flag.memory.tasks.pioneer = {
+    if( !flag.memory.tasks.dismantle ) {
+        flag.memory.tasks.dismantle = {
             queued: [], 
             spawning: [],
             running: []
         }
     }
-    return flag.memory.tasks.pioneer;
-};
-mod.creep = {
-    pioneer: {
-        fixedBody: [WORK, WORK, MOVE, MOVE, CARRY, CARRY],
-        multiBody: [WORK, MOVE, CARRY],
-        name: "pioneer", 
-        behaviour: "pioneer", 
-        queue: 'Low'
-    },
-    worker: {
-        fixedBody: [MOVE, CARRY, WORK],
-        behaviour: 'worker',
-        queue: 'High'
-    }
+    return flag.memory.tasks.dismantle;
 };

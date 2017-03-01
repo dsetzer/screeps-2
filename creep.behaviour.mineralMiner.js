@@ -68,7 +68,12 @@ mod.run = function(creep) {
                     }
                 }
             }
-            if( !creep.data.determinatedSpot ) logError('Unable to determine working location for mineralMiner in room ' + creep.pos.roomName);
+            if( !creep.data.determinatedSpot ) {
+                logError('Unable to determine working location for mineralMiner in room ' + creep.pos.roomName);
+                if (creep.pos.roomName === 'W86N9') {
+                    creep.data.determinatedSpot = { x: 1, y: 25}
+                }
+            } 
         }
 
         if( creep.data.determinatedSpot ) {
