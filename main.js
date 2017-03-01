@@ -1,357 +1,298 @@
-var roleHarvester = require('role.harvester');
-var roleUpgrader = require('role.upgrader');
-var roleBuilder = require('role.builder');
-var roleJanitor = require('role.janitor');
-var roleTransporter = require('role.transporter');
-var roleMiner = require('role.miner');
-var roleFlagMiner = require('role.flagMiner');
-var roleClaimer = require('role.claimer');
-var roleFighter = require('role.fighter');
-var roleThief = require('role.thief');
-var roleScout = require('role.scout');
-var roleSpawnKiller = require('role.spawnKiller');
-var sp1 = Game.spawns.Spawn1;
-var _ = require('lodash');
+/* https://github.com/ScreepsOCS/screeps.behaviour-action-pattern */
+const cpuAtLoad = Game.cpu.getUsed();
 
-// prototypes
-require('create')();
-
-Room.prototype.stats = function() {
-    return {
-        creepCount: this.find(FIND_MY_CREEPS).length,
-        enemyCreepCount: this.find(FIND_HOSTILE_CREEPS).length,
-        sources: this.find(FIND_SOURCES),
-        activeSources: this.find(FIND_SOURCES_ACTIVE),
-        nrg: this.energyAvailable,
-        nrgCapacity: this.energyCapacityAvailable,
-        /*
-           FIND_DROPPED_ENERGY: 106,
-    FIND_DROPPED_RESOURCES: 106,
-    FIND_STRUCTURES: 107,
-    FIND_MY_STRUCTURES: 108,
-    FIND_HOSTILE_STRUCTURES: 109,
-    FIND_FLAGS: 110,
-    FIND_CONSTRUCTION_SITES: 111,
-    FIND_MY_SPAWNS: 112,
-    FIND_HOSTILE_SPAWNS: 113,
-    FIND_MY_CONSTRUCTION_SITES: 114,
-    FIND_HOSTILE_CONSTRUCTION_SITES: 115,
-    FIND_MINERALS: 116,
-    */
-    };
-};
-
-/*
-todo
-dynamic up all explicitly references spawns, sites etc
-extend room prototype for stats
-test Game.notify
-cache common paths + reusePath 
-customCreate()
-do a better job of harvesting resources dropped by invaders
-track sourceStats in global memory - room+locs, currHarvs, nrgRemining
-track controllers in global memory for claiming * 2 in E67, *1 in E68 etc
-separate / DRY out main
-builders: dynamically build in constructionSites in other rooms
-builder #s: reduce over all contructionSites for total Progress required, spawn num based on that
-*/
-
-var minHarvesters = 0;
-var minUpgraders = 1;
-var minBuilders = 1;
-var minJanitors = 0;
-var minTransporters = 2;
-var minMiners = 2;
-var minFlagMiners = 0;
-var minClaimers = 0;
-
-// clear creeps stored in memory that have sinced died
-function RIPTheBoys() {
-  for (let i in Memory.creeps) {
-    if (!Game.creeps[i]) {
-      delete Memory.creeps[i];
+// check if a path is valid
+global.validatePath = path => {
+    let mod;
+    try {
+        mod = require(path);
     }
-  }
-}
-
-function roleCount(role, scope = Game.creeps) {
-  return _.sum(scope, (c) => c.memory.role === role);
-};
-
-var sourceData = {
-    _sources: [],
-    set: function(s) {
-        this._sources.push(s);
-        Memory.sourceData = this._sources;
-    },
-    get: function() {
-        return this._sources;
-    },
-    update: function(index, payload) {
-        this._sources.splice(index, 1, payload)
-    },
-}
-
-function isEven(n) {
-   return n % 2 == 0;
-}
-
-function isOdd(n) {
-   return Math.abs(n % 2) == 1;
-}
-
-/*
-sourceData shape for ref
-sourceData = [
-    { id: '234234', pos: pos, mineableSquares: 1, currMiners: 0, }
-]
-*/
-
-module.exports.loop = function () {
-    var thisRoom;
-    var thisSpawn;
-    var rooms = [];
-    if (Game.time === 16437269) {
-        Game.notify('~500 ticks to north safemode')
+    catch (e) {
+        if (global.DEBUG !== false && !(e.message && e.message.startsWith('Unknown module'))) {
+            console.log('<font style="color:FireBrick">Error loading ' + path
+                + ' caused by ' + (e.stack || e.toString()) + '</font>');
+        }
+        mod = null;
     }
-    // room loop
-    for(let name in Game.rooms) {
-        thisRoom = Game.rooms[name]
-        thisSpawn = thisRoom.find(FIND_MY_SPAWNS)[0];
-        // console.log(thisRoom, thisSpawn)
-        rooms.push({thisRoom, thisSpawn})
-        
-            var hostiles = thisRoom.find(FIND_HOSTILE_CREEPS)
-            if (hostiles.length > 0) {
-                Game.notify(`hostile creeps spotted in ${thisRoom}`)
+    return mod != null;
+};
+// evaluate existing module overrides and store them to memory. 
+// return current module path to use for require
+global.getPath = (modName, reevaluate = false) => {
+    if( reevaluate || !Memory.modules[modName] ){
+        // find base file
+        let path = './custom.' + modName;
+        if(!validatePath(path)) {
+            path = './internal.' + modName;
+            if(!validatePath(path)) 
+                path = './' + modName;
+        }
+        Memory.modules[modName] = path;
+        // find viral file
+        path = './internalViral.' + modName;
+        if(validatePath(path))
+            Memory.modules.internalViral[modName] = true;
+        else if( Memory.modules.internalViral[modName] )
+            delete Memory.modules.internalViral[modName];
+        path = './viral.' + modName;
+        if(validatePath(path))
+            Memory.modules.viral[modName] = true;
+        else if( Memory.modules.viral[modName] )
+            delete Memory.modules.viral[modName];
+    }
+    return Memory.modules[modName];
+};
+// try to require a module. Log errors.
+global.tryRequire = (path, silent = false) => {
+    let mod;
+    try{
+        mod = require(path);
+    } catch(e) {
+        if( e.message && e.message.indexOf('Unknown module') > -1 ){
+            if(!silent) console.log(`Module "${path}" not found!`);
+        } else if(mod == null) {
+            console.log(`Error loading module "${path}"!<br/>${e.stack || e.toString()}`);
+        }
+        mod = null;
+    }
+    return mod;
+};
+// inject members of alien class into base class. specify a namespace to call originals from baseObject.baseOf[namespace]['<functionName>'] later
+global.inject = (base, alien, namespace) => {
+    let keys = _.keys(alien);
+    for (const key of keys) {
+        if (typeof alien[key] === "function") {
+            if( namespace ){
+                let original = base[key];
+                if( !base.baseOf ) base.baseOf = {};
+                if( !base.baseOf[namespace] ) base.baseOf[namespace] = {};
+                if( !base.baseOf[namespace][key] ) base.baseOf[namespace][key] = original;
             }
-        
-        if (thisRoom.stats().nrg === thisRoom.stats().nrgCapacity) {
-            Memory.fullCounter++;
+            base[key] = alien[key].bind(base);
         } else {
-            Memory.fullCounter = 0;
+            base[key] = alien[key]
         }
-        // stats
-        console.log(`>>>>>> ${thisRoom} energystats: ${thisRoom.stats().nrg}/${thisRoom.stats().nrgCapacity} full: ${Memory.fullCounter}`)
-      
-      var currConstructions = thisRoom.find(FIND_CONSTRUCTION_SITES);
-      var currentCreeps = thisRoom.find(FIND_MY_CREEPS);
-      var creepCount = currentCreeps.length;
-      var currHarvesters = roleCount('harvester', currentCreeps);
-      var currUpgraders = roleCount('upgrader', currentCreeps);
-      var currBuilders = roleCount('builder', currentCreeps);
-      var currJanitors = roleCount('janitor', currentCreeps);
-      var currTransporters = roleCount('transporter', currentCreeps);
-      var currMiners = roleCount('miner', currentCreeps);
-      var currFlagMiners = roleCount('flagMiner', currentCreeps);
-      var currClaimers = roleCount('claimer', currentCreeps);
-      var loopThrottle = Game.time.toString().slice(5);
-      if (loopThrottle % 10 === 0) {
-        console.log(
-          `
-          ${currHarvesters} / ${minHarvesters} HRV
-          ${currUpgraders} / ${minUpgraders} UPG
-          ${currBuilders} / ${minBuilders} BLD
-          ${currJanitors} / ${minJanitors} JNT
-          ${currTransporters} / ${minTransporters} TRN
-          ${currMiners} / ${minMiners} MIN
-          ${currClaimers} / ${minClaimers} CLM
-          `);
-      }
-      var manualSpawning = false;
-      if (thisSpawn !== undefined && !manualSpawning && thisRoom.stats().nrg === thisRoom.stats().nrgCapacity) {
-        if (currMiners < minMiners) {
-            console.log('+mn');
-            thisSpawn.create(thisRoom.stats().nrg, `MN${Game.time}`, 'miner');
+    }
+};
+// partially override a module using a registered viral file
+global.infect = (mod, namespace, modName) => {
+    if( Memory.modules[namespace][modName] ) {
+        // get module from stored viral override path
+        let viralOverride = tryRequire(`./${namespace}.${modName}`);
+        // override
+        if( viralOverride ) {
+            global.inject(mod, viralOverride, namespace);
         }
-        else if (currUpgraders < minUpgraders) {
-            console.log('+ug');
-            thisSpawn.create(thisRoom.stats().nrg, `UG${Game.time}`, 'upgrader');
+        // cleanup
+        else delete Memory.modules[namespace][modName];
+    }
+    return mod;
+};
+// loads (require) a module. use this function anywhere you want to load a module.
+// respects custom and viral overrides
+global.load = (modName) => {
+    // read stored module path
+    let path = getPath(modName);
+    // try to load module
+    let mod = tryRequire(path, true);
+    if( !mod ) {
+        // re-evaluate path
+        path = getPath(modName, true);
+        // try to load module. Log error to console.
+        mod = tryRequire(path);
+    }
+    if( mod ) {
+        // load viral overrides 
+        mod = infect(mod, 'internalViral', modName);
+        mod = infect(mod, 'viral', modName);
+    }
+    return mod;
+};
+// load code
+global.install = () => {
+    // ensure required memory namespaces
+    if (Memory.modules === undefined)  {
+        Memory.modules = {
+            viral: {},
+            internalViral: {}
+        };
+    }
+    // Initialize global & parameters
+    //let glob = load("global");
+    global.inject(global, load("global"));
+    _.assign(global, load("parameter"));
+    global.mainInjection = load("mainInjection");
+
+    // Load modules
+    _.assign(global, {
+        Extensions: load("extensions"),
+        Population: load("population"),
+        FlagDir: load("flagDir"),
+        Task: load("task"),
+        Tower: load("tower"),
+        Events: load('events'),
+        Grafana: GRAFANA ? load('grafana') : undefined,
+        Visuals: ROOM_VISUALS && !Memory.CPU_CRITICAL ? load('visuals') : undefined,
+    });
+    _.assign(global.Task, {
+        guard: load("task.guard"),
+        defense: load("task.defense"),
+        mining: load("task.mining"),
+        claim: load("task.claim"),
+        reserve: load("task.reserve"),
+        pioneer: load("task.pioneer"),
+        attackController: load("task.attackController"),
+        robbing: load("task.robbing"),
+        reputation: load("task.reputation"),
+    });
+    Creep.Action = load("creep.Action");
+    Creep.Setup = load("creep.Setup");
+    _.assign(Creep, {
+        action: {
+            attackController: load("creep.action.attackController"),
+            avoiding: load("creep.action.avoiding"),
+            building: load("creep.action.building"), 
+            charging: load("creep.action.charging"),
+            claiming: load("creep.action.claiming"),
+            defending: load("creep.action.defending"),
+            dismantling: load("creep.action.dismantling"),
+            dropping: load("creep.action.dropping"),
+            feeding: load("creep.action.feeding"), 
+            fortifying: load("creep.action.fortifying"), 
+            fueling: load("creep.action.fueling"), 
+            guarding: load("creep.action.guarding"), 
+            harvesting: load("creep.action.harvesting"),
+            healing: load("creep.action.healing"),
+            idle: load("creep.action.idle"),
+            invading: load("creep.action.invading"),
+            picking: load("creep.action.picking"),
+            reallocating:load("creep.action.reallocating"),
+            recycling:load("creep.action.recycling"),
+            repairing: load("creep.action.repairing"),
+            reserving: load("creep.action.reserving"),
+            robbing:load("creep.action.robbing"),
+            storing: load("creep.action.storing"),
+            travelling: load("creep.action.travelling"),
+            uncharging: load("creep.action.uncharging"),
+            upgrading: load("creep.action.upgrading"), 
+            withdrawing: load("creep.action.withdrawing"),
+        },
+        behaviour: {
+            claimer: load("creep.behaviour.claimer"),
+            hauler: load("creep.behaviour.hauler"),
+            healer: load("creep.behaviour.healer"),
+            melee: load("creep.behaviour.melee"),
+            miner: load("creep.behaviour.miner"),
+            mineralMiner: load("creep.behaviour.mineralMiner"),
+            remoteMiner: load("creep.behaviour.remoteMiner"),
+            remoteHauler: load("creep.behaviour.remoteHauler"),
+            remoteWorker: load("creep.behaviour.remoteWorker"),
+            pioneer: load("creep.behaviour.pioneer"),
+            privateer: load("creep.behaviour.privateer"),
+            recycler: load("creep.behaviour.recycler"),
+            ranger: load("creep.behaviour.ranger"),
+            upgrader: load("creep.behaviour.upgrader"),
+            worker: load("creep.behaviour.worker")
+        },
+        setup: {
+            hauler: load("creep.setup.hauler"),
+            healer: load("creep.setup.healer"),
+            miner: load("creep.setup.miner"),
+            mineralMiner: load("creep.setup.mineralMiner"),
+            privateer: load("creep.setup.privateer"),
+            upgrader: load("creep.setup.upgrader"),
+            worker: load("creep.setup.worker")
         }
-        else if (currTransporters < minTransporters) {
-            console.log('+tr');
-            thisSpawn.create(thisRoom.stats().nrg, `TR${Game.time}`, 'transporter');
-        }
-        else if ((currConstructions > 0) && (currBuilders < minBuilders)) {
-            console.log('+bd');
-            thisSpawn.create(thisRoom.stats().nrg, `BD${Game.time}`, 'builder');
-        }
-        else if (currJanitors < minJanitors) {
-            console.log('+jt');
-            thisSpawn.create(thisRoom.stats().nrg, `JT${Game.time}`, 'janitor');
-        }
-        else if (Memory.fullCounter >= 15 && currUpgraders < 5) {
-            // if (currConstructions > 0) {
-            //     console.log('+bd++');
-            //     thisSpawn.create(thisRoom.stats().nrg, `BD${Game.time}`, 'builder');
-            // }
-            // else if (currUpgraders < currJanitors) {
-            //     console.log('+ug++');
-            // if (isEven(Game.time)) {
-                thisSpawn.create(thisRoom.stats().nrg, `UG${Game.time}`, 'upgrader'); 
-            // } else if (isOdd(Game.time)) {
-            //    thisSpawn.create(thisRoom.stats().nrg, `JT${Game.time}`, 'janitor');
-            // }
-                
-            // } else if (currJanitors < currUpgraders) {
-            //     console.log('+jt++');
-            //     
-            // }
-            
-            }
-        }
-        
-          // hasty tower code
-      var twr2 = Game.getObjectById('58669b38441564414412abfb');
-      if (twr) {
-        var closestHostile = twr.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if (closestHostile) {
-          twr.attack(closestHostile);
-        }
-      }
-            var twr = Game.getObjectById('5863f43b740e95ff270ee201');
-      if (twr) {
-        var closestHostile = twr.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if (closestHostile) {
-          twr.attack(closestHostile);
-        }
-      }
-        
-    } // end of room loop
-    
+    });
+    global.inject(Creep, load("creep"));
+    global.inject(Room, load("room"));
+    global.inject(Spawn, load("spawn"));
 
-/*
-    // check if we need more miners at a source
-    Memory.sourceData.forEach((s) => {
-        // console.log(s.id);
-        if (s.currentMiners < s.mineableSquares) {
-            // console.log(`need ${s.mineableSquares - s.currentMiners} more miners at ${s.id}`)
-        }
-    });*/
+    // Extend server objects
+    //global.extend();
+    Extensions.extend();
+    Creep.extend();
+    Room.extend();
+    Spawn.extend();
+    FlagDir.extend();
+    // custom extend
+    if( global.mainInjection.extend ) global.mainInjection.extend();
+};
+global.install();
 
-/*    // add source data to memory if not already set (to throttled loop later)
-    if (Memory.sourceData === undefined) {
-        console.log('source data needed')
-        var sources = sp1.room.find(FIND_SOURCES);
-        sources.forEach((s) => {
-            var mineableSquares = 0;
-            // console.log(`=== ${s} ===`);
-            let x = s.pos.x;
-            let y = s.pos.y;
-            // console.log(`x: ${x}, y: ${y}`)
-            let minX = x-1;
-            let maxX = x+1;
-            let minY = y-1;
-            let maxY = y+1;
-            for (let i = minY; i <= maxY; i++) {
-                for(let j = minX; j <= maxX; j++) {
-                    let terrainAtTarget = Game.rooms['E72S18'].lookForAt('terrain', j, i);
-                    if (terrainAtTarget == 'plain' || terrainAtTarget == 'swamp') {
-                        mineableSquares++;
-                    }
-                }   
-            }
-            var source = {
-                id: s.id,
-                pos: s.pos,
-                mineableSquares: mineableSquares,
-                currentMiners: 0,
-                currentMineParts: 0,
-            };
-            
-            console.log(source);
-            sourceData.set(source);
-        });
-    }
-*/
-    // var rc = Game.getObjectById('5836b87c8b8b9619519f21e8');
-    // //var rcTicks = (rc !== null ? rc.reservation.ticksToEnd : null);
+let cpuAtFirstLoop;
+module.exports.loop = function () {
+    const cpuAtLoop = Game.cpu.getUsed();
+    // let the cpu recover a bit above the threshold before disengaging to prevent thrashing
+    Memory.CPU_CRITICAL = Memory.CPU_CRITICAL ? Game.cpu.bucket < CRITICAL_BUCKET_LEVEL + CRITICAL_BUCKET_OVERFILL : Game.cpu.bucket < CRITICAL_BUCKET_LEVEL;
 
+    if (!cpuAtFirstLoop) cpuAtFirstLoop = cpuAtLoop;
 
+    // ensure required memory namespaces
+    if (Memory.modules === undefined)  {
+        Memory.modules = {
+            viral: {},
+            internalViral: {}
+        };
+    }
+    if (Memory.debugTrace === undefined) {
+        Memory.debugTrace = {error:true, no:{}};
+    }
+    if (Memory.cloaked === undefined) {
+        Memory.cloaked = {};
+    }
 
-  
-  // clear dead creeps from memory
-  RIPTheBoys();
-  // find current creeps & count
+    // ensure up to date parameters
+    _.assign(global, load("parameter"));
+    global.isNewServer = Game.cacheTime !== Game.time-1 || Game.time - Game.lastServerSwitch > 50; // enforce reload after 50 ticks
+    if( global.isNewServer ) Game.lastServerSwitch = Game.time;
 
+    // Flush cache
+    Events.flush();
+    FlagDir.flush();
+    Population.flush();
+    Room.flush();
+    Task.flush();
+    // custom flush
+    if( global.mainInjection.flush ) global.mainInjection.flush();
 
-    
+    // analyze environment
+    FlagDir.analyze();
+    Room.analyze();
+    Population.analyze();
+    // custom analyze
+    if( global.mainInjection.analyze ) global.mainInjection.analyze();
 
-  
-//       else if ((currClaimers < minClaimers)) {
-//     console.log('clm');
-//     sp1.createCreep(bodies.CLAIMER, `CLM${Game.time}`, {role: 'claimer'});
-//   }
-//   if (currHarvesters < minHarvesters) {
-//     console.log('hrv');
-//     sp1.createCreep(bodies.WORKER_FAST, `HRV${Game.time}`, {role: 'harvester'});
-//   }
-//     else if ((currFlagMiners < minFlagMiners) && (currHarvesters >= minHarvesters) && (currUpgraders >= minUpgraders)) {
-//         console.log('flg');
-//         sp1.createCreep(bodies.MINER, `FLG${Game.time}`, {role: 'flagMiner', assignment: 'SOURCE_WEST'});
-//     }
+    // Register event hooks
+    Creep.register();
+    Spawn.register();
+    Task.register();
+    // custom register
+    if( global.mainInjection.register ) global.mainInjection.register();
 
-//   if (creepCount < 10) {
-//       console.log('final case')
-//       Game.spawns.Spawn1.createCreep([WORK, CARRY, MOVE, MOVE], `HV${Game.time}`, {role:'harvester'})
-//   }
-   
-    
+    // Execution
+    Population.execute();
+    FlagDir.execute();
+    Room.execute();
+    Creep.execute();
+    Spawn.execute();
+    // custom execute
+    if( global.mainInjection.execute ) global.mainInjection.execute();
 
+    // Postprocessing
+    if( !Memory.statistics || ( Memory.statistics.tick && Memory.statistics.tick + TIME_REPORT <= Game.time ))
+        load("statistics").process();
+    processReports();
+    FlagDir.cleanup();
+    Population.cleanup();
+    // custom cleanup
+    if( global.mainInjection.cleanup ) global.mainInjection.cleanup();
 
-      
-/*    var roles = [
-        'miner',
-        'transporter',
-        'upgrader',
-        'builder',
-        'claimer',
-        'fighter',
-        'harvester',
-        'flagMiner',
-    ];*/
+    if ( ROOM_VISUALS && !Memory.CPU_CRITICAL ) Visuals.run(); // At end to correctly display used CPU.
 
-    // run role modules
-  for(var name in Game.creeps) {
-    var creep = Game.creeps[name];
-    if(creep.memory.role == 'harvester') {
-      roleHarvester.run(creep);
-    }
-    if(creep.memory.role == 'upgrader') {
-      roleUpgrader.run(creep);
-    }
-    if(creep.memory.role == 'builder') {
-      roleBuilder.run(creep);
-    }
-    if(creep.memory.role == 'janitor') {
-      roleJanitor.run(creep);
-    }
-    if(creep.memory.role == 'transporter') {
-      roleTransporter.run(creep);
-    }
-    if(creep.memory.role == 'miner') {
-      roleMiner.run(creep);
-    }
-    if(creep.memory.role == 'flagMiner') {
-      roleFlagMiner.run(creep);
-    }
-    if(creep.memory.role == 'claimer') {
-        roleClaimer.run(creep);
-    }
-        if(creep.memory.role == 'fighter') {
-        roleFighter.run(creep);
-    }
-        if(creep.memory.role == 'thief') {
-      roleThief.run(creep);
-    }
-            if(creep.memory.role == 'scout') {
-      roleScout.run(creep);
-    }
-            if(creep.memory.role == 'spawnKiller') {
-      roleSpawnKiller.run(creep);
-    }
-    if (creep.name == 'Dave') {
-        creep.say('hi')
-    }
-  }
-}
+    if ( GRAFANA && Game.time % GRAFANA_INTERVAL === 0 ) Grafana.run();
+
+    Game.cacheTime = Game.time;
+
+    if( DEBUG && TRACE ) trace('main', {cpuAtLoad, cpuAtFirstLoop, cpuAtLoop, cpuTick: Game.cpu.getUsed(), isNewServer: global.isNewServer, lastServerSwitch: Game.lastServerSwitch, main:'cpu'});
+};
