@@ -6,6 +6,7 @@ mod.priorityHigh = [
         Creep.setup.hauler,
         Creep.setup.upgrader];
 mod.priorityLow = [
+        Creep.setup.allocator,
         Creep.setup.mineralMiner,
         Creep.setup.privateer];
 mod.extend = function(){

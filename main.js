@@ -178,6 +178,7 @@ global.install = () => {
             withdrawing: load("creep.action.withdrawing"),
         },
         behaviour: {
+            allocator: load("creep.behaviour.allocator"),
             claimer: load("creep.behaviour.claimer"),
             hauler: load("creep.behaviour.hauler"),
             healer: load("creep.behaviour.healer"),
@@ -195,6 +196,7 @@ global.install = () => {
             worker: load("creep.behaviour.worker")
         },
         setup: {
+            allocator: load("creep.setup.allocator"),
             hauler: load("creep.setup.hauler"),
             healer: load("creep.setup.healer"),
             miner: load("creep.setup.miner"),
