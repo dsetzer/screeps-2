@@ -1,8 +1,8 @@
 ### ignore individual custom module overrides
 custom.*
 custom/*
-viral.*
-viral/*
+#viral.*
+#viral/*
 internal.*
 internal/*
 internalViral.*
