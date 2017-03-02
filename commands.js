@@ -1,30 +1,7 @@
 // useful commands
 
 // Recycle a creep
-Creep.action.recycling.assign(Game.creeps['']);
-Creep.action.building.assign(Game.creeps['']);
-Creep.action.reallocating.assign(Game.creeps['remoteHauler-']);
-/* rooms
-NW:
-W89N9
-NE:
-W86N9
-S:
-W88N7
-
-private:
-W7N3
-*/
-  
-/* placeOrder
-Game.rooms[''].placeOrder('id', RESOURCE_, count);
-
-setStore
-Game.rooms[''].setStore('id', RESOURCE_, count);
-
-placeReactionOrder
-Game.rooms['W89N9'].placeReactionOrder('id', RESOURCE_, count);
-*/
+Creep.action.recycling.assign(Game.creeps['<creepName>']);
 
 // flush road construction traces
 _.forEach(Memory.rooms, r => delete r.roadConstructionTrace);
@@ -36,11 +13,6 @@ _.forEach(Game.constructionSites, s => s.remove());
 Game.spawns['<spawnName>'].createCreepBySetup(Creep.setup.worker);
 // or
 Game.rooms['<roomName>'].spawnQueueLow.push({parts:[MOVE,WORK,CARRY],name:'max',setup:'worker'});
-Game.rooms[''].spawnQueueHigh.push({parts:[MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,MOVE,WORK,WORK,CARRY,CARRY,],name:'wk',setup:'worker'});
-
-Game.rooms['W7N3'].spawnQueueHigh.push({parts:[TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE,MOVE, HEAL, HEAL,HEAL,HEAL,HEAL, HEAL,HEAL],name:'h',setup:'healer', destiny: {buddy:'dismantler-Flag1-2'}});
-
-Game.rooms['W7N3'].spawnQueueHigh.push({parts:[TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE,MOVE,MOVE,MOVE, HEAL, HEAL,HEAL,HEAL,HEAL, HEAL,HEAL, HEAL],name:'h',setup:'healer', destiny: {buddy:'dismantler-Flag1-2'}});
 
 // clear spawn queues for a room
 // clear low priority queue
@@ -69,3 +41,13 @@ Game.market.deal(orderId, amount, roomName);
 
 //flush visuals heatmap
 _.forEach(Memory.rooms, r => delete r.heatmap);
+
+// https://github.com/ScreepsOCS/screeps.behaviour-action-pattern/wiki/Resource-Management
+//resource management  - stat labs
+Game.rooms[<roomName>].placeReactionOrder(<labId>, <resourceId>, <amount>)
+
+//resource management - maintain set amount in container
+Game.rooms[<roomName>].setStore(<structure>, <resource>, <amount>)
+
+//resource management - one off amount in container
+Game.rooms[<roomName>].placeOrder(<structure>, <resource>, <amount>)

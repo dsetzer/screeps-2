@@ -19,8 +19,8 @@ setup.RCL = {
         maxWeight: 0
     },
     8: {
-        fixedBody: [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,MOVE,MOVE, HEAL, HEAL,HEAL,HEAL,HEAL, HEAL,HEAL],
-        multiBody: [],
+        fixedBody: [],
+        multiBody: [MOVE, HEAL],
         minAbsEnergyAvailable: 300,
         minEnergyAvailable: 0.8,
         maxMulti: 4,

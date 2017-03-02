@@ -17,11 +17,9 @@ action.newTarget = function(creep){
 action.work = function(creep){
     if( creep.target.hits < creep.target.hitsMax ){
         if( creep.pos.isNearTo(creep.target) ){
-          creep.moveTo(creep.target);
-          return creep.heal(creep.target);
+            return creep.heal(creep.target);
         }
         if(creep.pos.inRangeTo(creep.target, 3)) {
-            creep.moveTo(creep.target);
             return creep.rangedHeal(creep.target);
         }
         return OK;
