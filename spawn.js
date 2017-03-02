@@ -12,6 +12,20 @@ mod.priorityLow = [
 mod.extend = function(){
     Spawn.prototype.execute = function(){
         if( this.spawning ) return;
+        
+        // check queue of creeps to renew ticksToLive
+        var renewQueue = Memory.rooms[this.room.name].renewQueue;
+        if (renewQueue) {
+          var queueLength = renewQueue.length;
+          renewQueue.forEach((c) => {
+            var rangeToSpawn = Game.creeps[c].pos.getRangeTo(this.pos);
+            if (rangeToSpawn === 1) {
+              this.fullRenew(Game.creeps[c]);
+              // console.log(`${this.name} is renewing ${Game.creeps[c]}`);
+            }
+          });
+        };
+        
         let room = this.room;
         // old spawning system 
         let that = this;
@@ -31,6 +45,52 @@ mod.extend = function(){
         }
         return busy;
     };
+    // call in console to push a creep to the renew queue
+    Spawn.prototype.renew = function(creep, begin = null) {
+      try {
+        if (!creep) {
+          logError('creep not found, probably dead. removing from memory');
+          Memory.rooms[this.room.name].renewQueue.splice(index, 1);
+          return;
+        }
+        console.log(`${this.room.name} ${this} Beginning renew of ${creep.name}`);
+        if (!Memory.rooms[this.room.name].renewQueue) {
+          console.log('saving renewQueue in memory 1st time');
+          Memory.rooms[this.room.name].renewQueue = [];
+        } else {
+          Memory.rooms[this.room.name].renewQueue.forEach((item, index) => {
+            console.log('renewQueue:', item);
+            if (item === creep.name) {
+              console.log('dupe entry found, removing');
+              Memory.rooms[this.room.name].renewQueue.splice(index, 1);
+            }
+          });
+        }
+        Memory.rooms[this.room.name].renewQueue.push(creep.name);
+      }
+      catch(e) {
+        console.log(e);
+      };
+    };
+    // renews a creep to full ticksToLive
+    Spawn.prototype.fullRenew = function(creep) {
+      if (creep.ticksToLive > 1490) {
+        console.log(`renew of ${creep} completed, stopping loop`);
+        Memory.rooms[this.room.name].renewQueue.forEach((c, index) => {
+          if (c === creep.name) {
+            console.log('DONE RENEWING, REMOVING FROM QUEUE', c);
+            Memory.rooms[this.room.name].renewQueue.splice(index, 1);
+          }
+        });
+      };
+      var bodySize = creep.body.length;
+      var remaining = creep.ticksToLive;
+      var totalLifeRequired = 1500 - remaining;
+      var renewAmount = Math.floor(600 / bodySize);
+      console.log(`renewing ${creep} at ${renewAmount} per tick. TTL: ${creep.ticksToLive}`);
+      this.renewCreep(creep);
+    }
+    
     Spawn.prototype.createCreepBySetup = function(setup){
         if( DEBUG && TRACE ) trace('Spawn',{setupType:this.type, rcl:this.room.controller.level, energy:this.room.energyAvailable, maxEnergy:this.room.energyCapacityAvailable, Spawn:'createCreepBySetup'}, 'creating creep');
         var params = setup.buildParams(this);
