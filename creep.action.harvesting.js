@@ -4,7 +4,7 @@ action.renewTarget = false;
 action.isValidAction = function(creep){
     return ( creep.sum < creep.carryCapacity && creep.room.sourceEnergyAvailable > 0 );
 };
-action.isValidTarget = function(target) {
+action.isValidTarget = function(target, creep) {
     return (target !== null && target.energy !== null && target.energy > 0 &&
         (target.targetOf === undefined || 
             (target.targetOf.length <= target.accessibleFields &&
@@ -25,35 +25,15 @@ action.isAddableTarget = function(target, creep){
         )
     ) && ( target.targetOf === undefined || target.targetOf.length < target.accessibleFields );
 };
-action.newTarget = function(creep){
-    let target = null;
-    let sourceGuests = 999;
-    var roomSources = _.sortBy(creep.room.sources, s => creep.pos.getRangeTo(s));
-    for( var iSource = 0; iSource < roomSources.length; iSource++ ){
-        let source = roomSources[iSource];
-        if( this.isValidTarget(source) && this.isAddableTarget(source, creep) ){
-            if( source.targetOf === undefined ) {
-                sourceGuests = 0;
-                target = source;
-                break;
-            } else {
-                let guests = _.countBy(source.targetOf, 'creepType');
-                let count = guests[creep.data.creepType];
-                if( !count ) {
-                    sourceGuests = 0;
-                    target = source;
-                } else if( count < sourceGuests ) {
-                    sourceGuests = count;
-                    target = source;
-                }
-            }
+action.newTarget = function(creep) {
+    const roomSources = _.sortBy(creep.room.sources, s => creep.pos.getRangeTo(s));
+    for (const source of roomSources) {
+        if (this.isValidTarget(source, creep) && this.isAddableTarget(source, creep)) {
+            return source;
         }
     }
-    return target;
+    return null;
 };
 action.work = function(creep){
     return creep.harvest(creep.target);
-};
-action.onAssignment = function(creep, target) {
-    if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9935), SAY_PUBLIC);
 };

@@ -5,22 +5,19 @@ action.isValidAction = function(creep){
     return ( creep.carry.energy > 0 && creep.room.energyAvailable < creep.room.energyCapacityAvailable );
 };
 action.isValidTarget = function(target){
-    return ( (target != null) && (target.energy != null) && (target.energy < target.energyCapacity) );
-};
-action.isAddableAction = function(creep){
-    return true;
+    return ( (target) && (!_.isUndefined(target.energy)) && (target.energy < target.energyCapacity) );
 };
 action.isAddableTarget = function(target){
     return ( target.my &&
         (!target.targetOf || _.filter(target.targetOf, {'actionName':'feeding'}).length < this.maxPerTarget));
 };
 action.newTarget = function(creep){
-    var that = this;
-    return creep.pos.findClosestByRange(creep.room.structures.all, {
+    if (creep.room.energyAvailable === creep.room.energyCapacityAvailable) {
+        return null;
+    }
+    return creep.pos.findClosestByRange(creep.room.structures.feedable, {
         filter: (structure) => {
-            return ((structure.structureType == STRUCTURE_EXTENSION ||
-                structure.structureType == STRUCTURE_SPAWN )
-                && that.isValidTarget(structure) && that.isAddableTarget(structure, creep));
+            return action.isValidTarget(structure) && action.isAddableTarget(structure, creep);
         }
     });
 };
@@ -31,8 +28,4 @@ action.work = function(creep){
         this.assign(creep);
     }
     return result;
-};
-action.onAssignment = function(creep, target) {
-    //if( SAY_ASSIGNMENT ) creep.say(String.fromCharCode(9739), SAY_PUBLIC);
-    if( SAY_ASSIGNMENT ) creep.say('\u{1F4E5}\u{FE0E}', SAY_PUBLIC);
 };

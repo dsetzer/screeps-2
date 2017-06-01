@@ -46,24 +46,36 @@ let Action = function(actionName){
     this.newTarget = function(creep){
         return null;
     };
+    this.unassign = function(creep) {
+        delete creep.data.actionName;
+        delete creep.data.targetId;
+        delete creep.action;
+        delete creep.target;
+    };
     // order for the creep to execute each tick, when assigned to that action
     this.step = function(creep){
-        if(CHATTY) creep.say(this.name, SAY_PUBLIC);
+        if(global.CHATTY) creep.say(this.name, global.SAY_PUBLIC);
         let range = creep.pos.getRangeTo(creep.target);
         if( range <= this.targetRange ) {
             var workResult = this.work(creep);
             if( workResult != OK ) {
-                const tryAction = creep.action;
-                const tryTarget = creep.target;
-                creep.action = null;
-                creep.target = null;
                 creep.handleError({errorCode: workResult, action: this, target: creep.target, range, creep});
-                return;
+                return this.unassign(creep);
             }
+            range = creep.pos.getRangeTo(creep.target); // target may have changed (eg. hauler feed+move/tick)
         }
-        if( creep.target ) {
-            range = creep.pos.getRangeTo(creep.target);
-            creep.drive( creep.target.pos, this.reachedRange, this.targetRange, range );
+        if( creep.target && creep.hasActiveBodyparts(MOVE) ) {
+            if (range > this.targetRange) creep.travelTo(creep.target, {range: this.targetRange});
+            // low CPU pathfinding for last few steps.
+            else if (range > this.reachedRange) {
+                const direction = creep.pos.getDirectionTo(creep.target);
+                const targetPos = Traveler.positionAtDirection(creep.pos, direction);
+                if (creep.room.isWalkable(targetPos.x, targetPos.y)) { // low cost last steps if possible
+                    creep.move(direction);
+                } else if (!creep.pos.isNearTo(creep.target)) { // travel there if we're not already adjacent
+                    creep.travelTo(creep.target, {range: this.reachedRange});
+                }
+            }
         }
     };
     // order for the creep to execute when at target
@@ -87,9 +99,9 @@ let Action = function(actionName){
     // optionally predefine a fixed target
     this.assign = function(creep, target){
         if( target === undefined ) target = this.newTarget(creep);
-        if( target != null ) {
-            if( DEBUG && TRACE ) trace('Action', {creepName:creep.name, assign:this.name, target:!target || target.name || target.id, Action:'assign'});
-            if( creep.action == null || creep.action.name != this.name || creep.target == null || creep.target.id != target.id || creep.target.name != target.name ) {
+        if( target && this.isAddableTarget(target, creep)) {
+            if( global.DEBUG && global.TRACE ) trace('Action', {creepName:creep.name, assign:this.name, target:!target || target.name || target.id, Action:'assign'});
+            if( !creep.action || creep.action.name != this.name || !creep.target || creep.target.id !== target.id || creep.target.name != target.name ) {
                 Population.registerAction(creep, this, target);
                 this.onAssignment(creep, target);
             }
@@ -98,15 +110,32 @@ let Action = function(actionName){
         return false;
     };
     // assignment postprocessing
-    // needs implementation in derived action
-    this.onAssignment = (creep, target) => {};
+    this.onAssignment = function(creep, target) {
+        if (global.SAY_ASSIGNMENT && ACTION_SAY[this.name.toUpperCase()]) creep.say(ACTION_SAY[this.name.toUpperCase()], global.SAY_PUBLIC);
+        if (target instanceof RoomObject || target instanceof RoomPosition && VISUALS.ACTION_ASSIGNMENT) {
+            Visuals.drawArrow(creep, target);
+        }
+    };
     // empty default strategy
     this.defaultStrategy = {
-        name: `default-${actionName}`
+        name: `default-${actionName}`,
+        moveOptions: function(options) {
+            return options || {};
+        }
     };
     // strategy accessor
     this.selectStrategies = function() {
         return [this.defaultStrategy];
+    };
+    // get member with this action's name
+    this.isMember = function(collection) {
+        return _.find(collection, function(a) {
+            return a.name === this.name;
+        }, this);
+    };
+    this.getStrategy = function(strategyName, creep, ...args) {
+        if (_.isUndefined(args)) return creep.getStrategyHandler([this.name], strategyName);
+        else return creep.getStrategyHandler([this.name], strategyName, ...args);
     };
 };
 module.exports = Action;

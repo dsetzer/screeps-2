@@ -1,40 +1,25 @@
-let mod = {};
+const mod = new Creep.Behaviour('remoteMiner');
 module.exports = mod;
-mod.name = 'remoteMiner';
+const super_run = mod.run;
 mod.run = function(creep) {
-    if (Creep.action.avoiding.run(creep)) {
-        return;
-    }
-
-    let oldTargetId = creep.data.targetId;
-    // assign Action
-    if( creep.room.name == creep.data.destiny.room ){
-        // if we're there, be a miner.
-        this.mine(creep);
-        return;
-    } else {
-        // else go there
-        Creep.action.travelling.assign(creep, Game.flags[creep.data.destiny.targetName]);
-    }
-    
-    // Do some work
-    if( creep.action && creep.target ) {
-        creep.action.step(creep);
-    } else {
-        logError('Creep without action/activity!\nCreep: ' + creep.name + '\ndata: ' + JSON.stringify(creep.data));
-    }
-};
-mod.mine = function(creep) {
-    return Creep.behaviour.miner.run(creep, {remote:true, approach:mod.approach});
-};
-mod.approach = function(creep){
-    let targetPos = new RoomPosition(creep.data.determinatedSpot.x, creep.data.determinatedSpot.y, creep.data.destiny.room);
-    let range = creep.pos.getRangeTo(targetPos);
-    if( range > 0 ) {
-        creep.drive( targetPos, 0, 0, range );
-        if( range <= 2 && !creep.data.predictedRenewal ) {
-            creep.data.predictedRenewal = _.min([500, 1500 - creep.ticksToLive + creep.data.spawningTime]);
+    if (!Creep.action.avoiding.run(creep)) {
+        const flag = creep.data.destiny && Game.flags[creep.data.destiny.targetName];
+        if (!flag) {
+            if (!creep.action || creep.action.name !== 'recycling') {
+                this.assignAction(creep, 'recycling');
+            }
+        } else if (creep.room.name !== creep.data.destiny.room) {
+            Creep.action.travelling.assignRoom(creep, flag.pos.roomName);
         }
+        super_run.call(this, creep);
     }
-    return range;
+};
+mod.actions = function(creep) {
+    return Creep.behaviour.miner.actions.call(this, creep);
+}
+mod.getEnergy = function(creep) {
+    return Creep.behaviour.miner.getEnergy.call(this, creep);
+};
+mod.maintain = function(creep) {
+    return Creep.behaviour.miner.maintain.call(this, creep);
 };
