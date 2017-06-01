@@ -266,6 +266,7 @@ load('traveler')({exportTraveler: false, installTraveler: true, installPrototype
 
 let cpuAtFirstLoop;
 module.exports.loop = function () {
+  console.log('test sync');
     const cpuAtLoop = Game.cpu.getUsed();
     if (Memory.pause) return;
     
